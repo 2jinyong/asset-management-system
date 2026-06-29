@@ -1,0 +1,5 @@
+# MySQL
+jdbc.driver=com.mysql.cj.jdbc.Driver
+jdbc.url=jdbc:mysql://127.0.0.1:3306/asset_management?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+jdbc.username=id
+jdbc.password=password
