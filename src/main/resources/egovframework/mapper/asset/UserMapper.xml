@@ -1,24 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    ============================================================
+    [MyBatis Mapper XML 파일이란?]
+    ============================================================
+    Java 인터페이스(UserMapper.java)와 실제 SQL을 연결해주는 파일입니다.
+    namespace 속성이 Java 인터페이스의 패키지 경로와 반드시 일치해야 합니다.
+
+    흐름: UserMapper.java의 메서드명 = 이 XML 안의 id 속성
+    예시: userMapper.insertUser(vo) → <insert id="insertUser"> 실행
+    ============================================================
+-->
 <mapper namespace="egovframework.asset.user.service.UserMapper">
 
-	<insert id="insertUser"
-		parameterType="egovframework.asset.user.service.UserVO">
-		
-		INSERT INTO user (
-			user_name,
-			email,
-			password,
-			employee_number
-		)
-		VALUES (
-			#{userName},
-			#{email},
-			#{password},
-			#{employeeNumber}
-		)
+    <!--
+        [INSERT - 회원가입]
+        id        : UserMapper.java 인터페이스의 insertUser() 메서드와 연결
+        parameterType : 전달받는 Java 객체 타입
+                        "egovframework.asset.user.service.UserVO" 의 단축명 "userVO"
+                        (단축명은 sql-mapper-config.xml 의 typeAlias 에서 설정)
 
-	</insert>
+        #{userName} 문법(=파라미터 바인딩):
+          - #{}  : PreparedStatement 방식 → SQL 인젝션 방지 (권장)
+          - ${}  : 문자열 치환 방식     → SQL 인젝션 위험 (조심)
+          - #{} 안의 이름은 UserVO 클래스의 필드명(getter 기준)과 일치해야 함
+    -->
+    <insert id="insertUser" parameterType="userVO">
+        INSERT INTO users (
+            user_name,
+            email,
+            password,
+            employee_number,
+            role,
+            use_yn
+        ) VALUES (
+            #{userName},
+            #{email},
+            #{password},
+            #{employeeNumber},
+            #{role},
+            #{useYn}
+        )
+    </insert>
+
+    <!--
+        [SELECT - 이메일로 사용자 단건 조회 (로그인용)]
+        id            : UserMapper.java 의 selectUserByEmail() 메서드와 연결
+        parameterType : String (이메일 문자열 하나만 전달)
+        resultType    : "userVO" = UserVO 객체 한 개를 반환
+
+        [mapUnderscoreToCamelCase 설정 덕분에]
+        sql-mapper-config.xml 에 mapUnderscoreToCamelCase=true 가 설정되어 있어서
+        DB 컬럼명(user_name) → Java 필드명(userName) 자동 변환이 됩니다.
+        덕분에 resultMap 없이 resultType="userVO" 만으로 자동 매핑됩니다.
+
+        AND use_yn = 'Y' : 탈퇴/비활성 계정은 로그인 불가
+    -->
+    <select id="selectUserByEmail" parameterType="String" resultType="userVO">
+        SELECT
+            user_id,
+            user_name,
+            email,
+            password,
+            employee_number,
+            role,
+            use_yn,
+            reg_date,
+            update_date
+        FROM users
+        WHERE email    = #{email}
+          AND use_yn   = 'Y'
+    </select>
 
 </mapper>
-

@@ -7,7 +7,7 @@ target/
 *.log
 
 # 외부 라이브러리 폴더 (여기에 부트스트랩/제이쿼리 폴더를 추가)
-src/main/webapp/css/bootstrap
+src/main/webapp/css/egovframework/bootstrap
 src/main/webapp/js
 
 # db접속정보
