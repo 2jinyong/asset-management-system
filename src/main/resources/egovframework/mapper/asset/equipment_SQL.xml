@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="egovframework.asset.equipment.EquipmentMapper">
+
+    <select id="selectEquipmentList" parameterType="map" resultType="egovframework.asset.equipment.EquipmentVO">
+        SELECT equipment_id, equipment_name, category, status, qr_image_path, created_at
+        FROM EQUIPMENT
+        <where>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+        ORDER BY equipment_id ASC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectEquipmentCount" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM EQUIPMENT
+        <where>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectCategorySummary" resultType="map">
+        SELECT
+            category,
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = 'AVAILABLE' THEN 1 ELSE 0 END) AS available,
+            SUM(CASE WHEN status = 'RENTED' THEN 1 ELSE 0 END) AS rented,
+            SUM(CASE WHEN status = 'BROKEN' THEN 1 ELSE 0 END) AS broken
+        FROM EQUIPMENT
+        GROUP BY category
+        ORDER BY category
+    </select>
+
+</mapper>

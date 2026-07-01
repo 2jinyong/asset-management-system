@@ -2,6 +2,7 @@
 -- 사내 비품관리시스템 DB 스키마 (MySQL/MariaDB)
 -- ============================================================
 
+
 -- 1. 데이터베이스 생성
 CREATE SCHEMA IF NOT EXISTS `asset` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `asset`;
@@ -24,3 +25,19 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- 주의: 실제 운영 환경에서는 비밀번호를 반드시 암호화(BCrypt 등)하여 저장하세요.
 INSERT INTO `users` (`user_name`, `email`, `password`, `employee_number`, `role`, `use_yn`)
 VALUES ('시스템관리자', 'admin@company.com', 'admin1234', 'ADM001', 'ADMIN', 'Y');
+
+
+-- ====================================================================================
+
+-- 1. 비품 테이블 생성
+
+CREATE TABLE `EQUIPMENT` (
+  `equipment_id` bigint NOT NULL AUTO_INCREMENT,
+  `equipment_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AVAILABLE',
+  `qr_image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`equipment_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
