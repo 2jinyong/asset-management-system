@@ -1,6 +1,8 @@
 package egovframework.asset.equipment;
 
 import java.util.HashMap;
+import egovframework.asset.cmmn.EquipmentPaging;
+import egovframework.asset.cmmn.PageMaker;
 import java.util.List;
 import java.util.Map;
 
@@ -26,26 +28,32 @@ public class EquipmentController {
 	}
 
 	@RequestMapping("/equipmentList.do")
-	public String equipmentList(@RequestParam(value = "category", defaultValue = "") String category,
-			@RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex, ModelMap model) {
+	public String equipmentList(
+	        @RequestParam(value = "category", defaultValue = "") String category,
+	        @RequestParam(value = "page", defaultValue = "1") int page,
+	        ModelMap model) {
 
-		Map<String, Object> params = new HashMap<>();
-		params.put("category", category);
-		params.put("pageIndex", pageIndex);
-		params.put("pageSize", 10);
-		params.put("offset", (pageIndex - 1) * 10);
+	    EquipmentPaging paging = new EquipmentPaging();
+	    paging.setPage(page);
+	    paging.setPerPageNum(15);
 
-		List<EquipmentVO> list = equipmentService.getEquipmentList(params);
-		int totalCount = equipmentService.getEquipmentCount(params);
-		int totalPages = (int) Math.ceil((double) totalCount / 10);
+	    Map<String, Object> params = new HashMap<>();
+	    params.put("category", category);
+	    params.put("pageSize", paging.getPerPageNum());
+	    params.put("offset", paging.getPageStart());
 
-		model.addAttribute("equipmentList", list);
-		model.addAttribute("totalCount", totalCount);
-		model.addAttribute("totalPages", totalPages);
-		model.addAttribute("pageIndex", pageIndex);
-		model.addAttribute("category", category);
+	    List<EquipmentVO> list = equipmentService.getEquipmentList(params);
+	    int totalCount = equipmentService.getEquipmentCount(params);
 
-		return "/board/EquipmentList";
+	    PageMaker pageMaker = new PageMaker();
+	    pageMaker.setPaging(paging);
+	    pageMaker.setTotalCount(totalCount);
+
+	    model.addAttribute("equipmentList", list);
+	    model.addAttribute("pageMaker", pageMaker);
+	    model.addAttribute("category", category);
+
+	    return "/board/EquipmentList";
 	}
 
 	@RequestMapping("/rentalRequest.do")
