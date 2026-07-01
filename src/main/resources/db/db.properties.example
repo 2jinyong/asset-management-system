@@ -1,5 +1,5 @@
 # MySQL
 jdbc.driver=com.mysql.cj.jdbc.Driver
 jdbc.url=jdbc:mysql://13.125.237.182:3306/assetdb?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
-jdbc.username=assetuser
-jdbc.password=12341234
+jdbc.username=id
+jdbc.password=pw
