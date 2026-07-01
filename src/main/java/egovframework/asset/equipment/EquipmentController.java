@@ -47,4 +47,24 @@ public class EquipmentController {
 
 		return "/board/EquipmentList";
 	}
+
+	@RequestMapping("/rentalRequest.do")
+	public String rentalRequest() {
+		return "/board/RentalRequest";
+	}
+
+	@RequestMapping("/returnQr.do")
+	public String returnQr() {
+		return "/board/ReturnQr";
+	}
+
+	@RequestMapping("/extendRequest.do")
+	public String extendRequest() {
+		return "/board/ExtendRequest";
+	}
+
+	@RequestMapping("/reportIssue.do")
+	public String reportIssue() {
+		return "/board/ReportIssue";
+	}
 }
