@@ -18,19 +18,62 @@ package egovframework.asset.user.service;
  *   private UserService userService; // 인터페이스 타입으로 선언
  * ============================================================
  */
+import java.util.List;
+
 public interface UserService {
 
     /**
-     * 회원가입 - 새로운 사용자를 등록합니다.
+     * 회원가입 - 새로운 사용자를 등록합니다. (승인 대기 상태로 저장)
      * @param userVO 회원가입할 사용자 정보
-     * @return 1=성공, 0=이미 존재하는 이메일
+     * @return 1=성공, 0=이미 가입 신청했거나 가입된 이메일
      */
     int insertUser(UserVO userVO);
 
     /**
-     * 로그인 - 이메일과 비밀번호를 확인합니다.
+     * 로그인 - 이메일과 비밀번호를 확인합니다. (use_yn='Y' 인 승인된 계정만 성공)
      * @param userVO 로그인할 사용자 정보 (email, password 사용)
      * @return 로그인 성공 시 사용자 정보 객체, 실패 시 null
      */
     UserVO login(UserVO userVO);
+
+    /**
+     * 이메일로 사용자를 조회합니다. (use_yn 무관, 'N' 제외) - 회원가입 중복 체크용
+     * @param email 조회할 이메일
+     * @return 사용자 정보, 없으면 null
+     */
+    UserVO findByEmailIncludingPending(String email);
+
+    /**
+     * 이메일로 사용자를 조회합니다. (use_yn 상태 무관, 전부) - 로그인 실패 사유 구분용
+     * @param email 조회할 이메일
+     * @return 사용자 정보, 없으면 null
+     */
+    UserVO findByEmailAnyStatus(String email);
+
+    /**
+     * 가입 승인 대기 목록을 조회합니다.
+     * @return 승인 대기 사용자 목록
+     */
+    List<UserVO> getPendingUserList();
+
+    /**
+     * 가입 승인 처리
+     * @param userId 승인할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int approveUser(Long userId);
+
+    /**
+     * 가입 반려 처리
+     * @param userId 반려할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int rejectUser(Long userId);
+
+    /**
+     * 회원 탈퇴 처리 (본인 계정)
+     * @param userId 탈퇴할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int withdrawUser(Long userId);
 }

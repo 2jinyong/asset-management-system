@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import egovframework.asset.user.service.UserService;
 import egovframework.asset.user.service.UserVO;
@@ -85,9 +86,20 @@ public class UserController {
 
         if (loginUser != null) {
             session.setAttribute("loginUser", loginUser);  // 세션에 로그인 정보 저장
-            return "redirect:/user/main.do";                // PRG 패턴
+            return "redirect:/main.do";                // PRG 패턴
         } else {
-            model.addAttribute("errorMsg", "이메일 또는 비밀번호가 올바르지 않습니다.");
+            // 로그인 실패 시, 아이디/비번이 틀린 게 아니라 계정 상태 때문에 못 들어오는 것인지 확인해서 안내
+            UserVO anyUser = userService.findByEmailAnyStatus(email);
+            String status = (anyUser != null) ? anyUser.getUseYn() : null;
+            if ("P".equals(status)) {
+                model.addAttribute("errorMsg", "가입 승인 중입니다. 관리자 승인 후 로그인해주세요.");
+            } else if ("R".equals(status)) {
+                model.addAttribute("errorMsg", "가입이 반려되었습니다. 관리자에게 문의해주세요.");
+            } else if ("N".equals(status)) {
+                model.addAttribute("errorMsg", "탈퇴한 계정입니다.");
+            } else {
+                model.addAttribute("errorMsg", "이메일 또는 비밀번호가 올바르지 않습니다.");
+            }
             return "user/login";
         }
     }
@@ -175,5 +187,71 @@ public class UserController {
     public String logout(HttpSession session) {
         session.invalidate();
         return "redirect:/user/loginView.do";
+    }
+
+    /**
+     * [회원 탈퇴]
+     * POST /user/withdraw.do → 본인 계정 use_yn='N' 처리 후 세션 삭제, 로그인 페이지로 이동
+     * ADMIN 계정은 탈퇴 불가 (화면에서도 버튼을 숨기지만, 직접 URL 호출도 막아둠)
+     */
+    @PostMapping("/withdraw.do")
+    public String withdraw(HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return "redirect:/user/loginView.do";
+        }
+        if ("ADMIN".equals(loginUser.getRole())) {
+            return "redirect:/main.do";
+        }
+        userService.withdrawUser(loginUser.getUserId());
+        session.invalidate();
+        return "redirect:/user/loginView.do";
+    }
+
+    /* ===========================================================
+       가입 승인 (관리자 전용)
+       =========================================================== */
+
+    /**
+     * [가입 승인 대기 목록]
+     * GET /user/pendingList.do
+     * ADMIN 이 아니면 메인으로 돌려보냄
+     */
+    @GetMapping("/pendingList.do")
+    public String pendingList(HttpSession session, Model model) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
+            return "redirect:/main.do";
+        }
+        model.addAttribute("pendingUsers", userService.getPendingUserList());
+        return "/board/ApproveUserList";
+    }
+
+    /**
+     * [가입 승인 처리]
+     * POST /user/approve.do
+     */
+    @PostMapping("/approve.do")
+    public String approve(@RequestParam("userId") Long userId, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
+            return "redirect:/main.do";
+        }
+        userService.approveUser(userId);
+        return "redirect:/user/pendingList.do";
+    }
+
+    /**
+     * [가입 반려 처리]
+     * POST /user/reject.do
+     */
+    @PostMapping("/reject.do")
+    public String reject(@RequestParam("userId") Long userId, HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
+            return "redirect:/main.do";
+        }
+        userService.rejectUser(userId);
+        return "redirect:/user/pendingList.do";
     }
 }

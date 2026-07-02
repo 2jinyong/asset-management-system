@@ -46,6 +46,9 @@
   .btn:hover { opacity: 0.8; }
   .category-link { text-decoration: none; color: #222; }
   .category-link:hover { text-decoration: underline; color: #2d5be3; }
+  .btn-logout { background: #f0f0f0; color: #555; }
+  .btn-withdraw { background: #fff0f0; color: #c0392b; }
+  form.inline { display: inline; }
 </style>
 </head>
 <body>
@@ -53,8 +56,19 @@
 <div class="header">
   <span class="logo">&#128230; 사내 비품 관리 시스템</span>
   <div class="user-info">
-    <div class="avatar">김</div>
-    <span>김재민 님</span>
+	<c:if test = "${sessionScope.loginUser.role == 'USER' }">
+	    <div class="avatar">
+			사원
+	    </div>
+	</c:if>
+    <span>${sessionScope.loginUser.userName}</span>
+    <a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
+    <c:if test="${sessionScope.loginUser.role == 'USER'}">
+      <form class="inline" method="post" action="<%=request.getContextPath()%>/user/withdraw.do"
+            onsubmit="return confirm('정말 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없습니다.');">
+        <button type="submit" class="btn btn-withdraw">회원 탈퇴</button>
+      </form>
+    </c:if>
   </div>
 </div>
 
@@ -66,26 +80,42 @@
 
   <!-- 메뉴 -->
   <div class="menu-grid">
-    <a href="rentalRequest.do" class="menu-card">
-      <span class="icon">📋</span>
-      <span class="menu-title">대여 요청</span>
-      <span class="menu-desc">비품 선택 후 신청</span>
-    </a>
-    <a href="returnQr.do" class="menu-card">
-      <span class="icon">📷</span>
-      <span class="menu-title">반납 처리</span>
-      <span class="menu-desc">QR 스캔으로 반납</span>
-    </a>
-    <a href="extendRequest.do" class="menu-card">
-      <span class="icon">📅</span>
-      <span class="menu-title">연장 요청</span>
-      <span class="menu-desc">대여 기간 연장 신청</span>
-    </a>
-    <a href="reportIssue.do" class="menu-card">
-      <span class="icon">🚨</span>
-      <span class="menu-title">문제 신고</span>
-      <span class="menu-desc">이상 상태 신고 및 사진 첨부</span>
-    </a>
+    <c:choose>
+      <c:when test="${sessionScope.loginUser.role == 'ADMIN'}">
+        <a href="approveList.do" class="menu-card">
+          <span class="icon">✅</span>
+          <span class="menu-title">승인 관리</span>
+          <span class="menu-desc">대여/반납/연장/신고 요청 승인</span>
+        </a>
+        <a href="user/pendingList.do" class="menu-card">
+          <span class="icon">🧑‍💼</span>
+          <span class="menu-title">가입 승인</span>
+          <span class="menu-desc">신규 가입 신청 승인/반려</span>
+        </a>
+      </c:when>
+      <c:otherwise>
+        <a href="rentalRequest.do" class="menu-card">
+          <span class="icon">📋</span>
+          <span class="menu-title">대여 요청</span>
+          <span class="menu-desc">비품 선택 후 신청</span>
+        </a>
+        <a href="returnQr.do" class="menu-card">
+          <span class="icon">📷</span>
+          <span class="menu-title">반납 처리</span>
+          <span class="menu-desc">QR 스캔으로 반납</span>
+        </a>
+        <a href="extendRequest.do" class="menu-card">
+          <span class="icon">📅</span>
+          <span class="menu-title">연장 요청</span>
+          <span class="menu-desc">대여 기간 연장 신청</span>
+        </a>
+        <a href="reportIssue.do" class="menu-card">
+          <span class="icon">🚨</span>
+          <span class="menu-title">문제 신고</span>
+          <span class="menu-desc">이상 상태 신고 및 사진 첨부</span>
+        </a>
+      </c:otherwise>
+    </c:choose>
   </div>
 
   <!-- 비품 카테고리별 현황 -->
