@@ -41,12 +41,12 @@
 </head>
 <body>
 <div class="header">
-  <a href="test.do" class="logo">&#128230; 사내 비품 관리 시스템</a>
+  <a href="main.do" class="logo">&#128230; 사내 비품 관리 시스템</a>
   <div class="user-info"><div class="avatar">김</div><span>김재민 님</span></div>
 </div>
 <div class="container">
   <div class="page-header">
-    <a href="test.do" class="back-btn">← 메인으로</a>
+    <a href="main.do" class="back-btn">← 메인으로</a>
     <p class="page-title">📷 반납 처리</p>
   </div>
   <div class="card">
