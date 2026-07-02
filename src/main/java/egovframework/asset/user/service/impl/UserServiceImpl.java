@@ -21,6 +21,8 @@ package egovframework.asset.user.service.impl;
  * - 실제 DB 접근(SQL 실행)은 이 mapper를 통해 이루어집니다.
  * ============================================================
  */
+import java.util.List;
+
 import javax.annotation.Resource;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
@@ -40,22 +42,25 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
 
     /**
      * [회원가입 처리]
-     * 1. 이미 존재하는 이메일인지 먼저 확인
-     * 2. 없으면 기본값(권한, 사용여부) 설정 후 DB에 저장
+     * 1. 이미 가입 신청했거나(승인대기 'P') 이미 활성('Y')인 이메일인지 먼저 확인
+     * 2. 없으면 기본값(권한, 사용여부) 설정 후 DB에 저장 - 승인대기('P') 상태로 저장
+     *    관리자가 승인해야 use_yn='Y' 로 바뀌어 로그인이 가능해짐
      */
     @Override
     public int insertUser(UserVO userVO) {
 
-        // Step 1: 이메일 중복 체크 (같은 이메일로 가입된 계정이 있는지 확인)
-        UserVO existingUser = userMapper.selectUserByEmail(userVO.getEmail());
+        // Step 1: 이메일 중복 체크
+        // selectUserByEmail(use_yn='Y'만 조회) 대신 selectUserByEmailAny(P/Y 모두 조회)를 써야
+        // "승인 대기 중"인 이메일로 중복 가입 신청하는 것도 막을 수 있다.
+        UserVO existingUser = userMapper.selectUserByEmailAny(userVO.getEmail());
         if (existingUser != null) {
-            return 0; // 이미 사용 중인 이메일 → 0 반환 (컨트롤러에서 에러 처리)
+            return 0; // 이미 가입 신청했거나 활성 상태인 이메일 → 0 반환 (컨트롤러에서 에러 처리)
         }
 
         // Step 2: 기본값 설정
-        // 회원가입 시 권한은 일반 사용자("USER"), 사용 여부는 활성("Y") 로 고정
+        // 회원가입 시 권한은 일반 사용자("USER"), 사용 여부는 승인대기("P") 로 고정
         userVO.setRole("USER");
-        userVO.setUseYn("Y");
+        userVO.setUseYn("P");
 
         // Step 3: DB에 INSERT 실행
         // userMapper.insertUser() 호출 → UserMapper.xml 의 <insert id="insertUser"> 실행
@@ -89,5 +94,35 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
 
         // Step 3: 이메일과 비밀번호가 모두 일치 → 사용자 정보 반환
         return findUser;
+    }
+
+    @Override
+    public UserVO findByEmailIncludingPending(String email) {
+        return userMapper.selectUserByEmailAny(email);
+    }
+
+    @Override
+    public UserVO findByEmailAnyStatus(String email) {
+        return userMapper.selectUserByEmailAllStatus(email);
+    }
+
+    @Override
+    public List<UserVO> getPendingUserList() {
+        return userMapper.selectPendingUserList();
+    }
+
+    @Override
+    public int approveUser(Long userId) {
+        return userMapper.updateUserApprove(userId);
+    }
+
+    @Override
+    public int rejectUser(Long userId) {
+        return userMapper.updateUserReject(userId);
+    }
+
+    @Override
+    public int withdrawUser(Long userId) {
+        return userMapper.updateUserWithdraw(userId);
     }
 }

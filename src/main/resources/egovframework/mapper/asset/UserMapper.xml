@@ -73,4 +73,87 @@
           AND use_yn   = 'Y'
     </select>
 
+    <!--
+        [SELECT - 이메일로 사용자 단건 조회 (활성/승인대기만)]
+        회원가입 중복 체크: 승인대기('P')/활성('Y') 상태인 계정이 있으면 재가입 불가.
+        반려('R')/탈퇴('N') 상태는 제외 - 같은 이메일로 재가입 허용.
+    -->
+    <select id="selectUserByEmailAny" parameterType="String" resultType="userVO">
+        SELECT
+            user_id,
+            user_name,
+            email,
+            password,
+            employee_number,
+            role,
+            use_yn,
+            reg_date,
+            update_date
+        FROM users
+        WHERE email    = #{email}
+          AND use_yn   IN ('Y', 'P')
+    </select>
+
+    <!--
+        [SELECT - 이메일로 사용자 단건 조회 (상태 무관, 전체)]
+        로그인 실패 시 "왜" 실패했는지(P=승인대기, N=반려/비활성, 없음=이메일/비번 오류) 구분하는 용도.
+        selectUserByEmailAny 와 달리 'N' 상태도 포함해서 조회한다.
+    -->
+    <select id="selectUserByEmailAllStatus" parameterType="String" resultType="userVO">
+        SELECT
+            user_id,
+            user_name,
+            email,
+            password,
+            employee_number,
+            role,
+            use_yn,
+            reg_date,
+            update_date
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <!--
+        [SELECT - 가입 승인 대기 목록]
+        관리자 "가입 승인" 화면에서 사용
+    -->
+    <select id="selectPendingUserList" resultType="userVO">
+        SELECT
+            user_id,
+            user_name,
+            email,
+            employee_number,
+            role,
+            use_yn,
+            reg_date
+        FROM users
+        WHERE use_yn = 'P'
+        ORDER BY reg_date ASC
+    </select>
+
+    <!-- [UPDATE - 가입 승인] use_yn 을 'Y'(활성) 로 변경 -->
+    <update id="updateUserApprove" parameterType="Long">
+        UPDATE users
+        SET use_yn = 'Y'
+        WHERE user_id = #{userId}
+          AND use_yn  = 'P'
+    </update>
+
+    <!-- [UPDATE - 가입 반려] use_yn 을 'R'(가입반려) 로 변경 -->
+    <update id="updateUserReject" parameterType="Long">
+        UPDATE users
+        SET use_yn = 'R'
+        WHERE user_id = #{userId}
+          AND use_yn  = 'P'
+    </update>
+
+    <!-- [UPDATE - 회원 탈퇴] use_yn 을 'N'(탈퇴) 로 변경. 활성('Y') 계정만 탈퇴 가능 -->
+    <update id="updateUserWithdraw" parameterType="Long">
+        UPDATE users
+        SET use_yn = 'N'
+        WHERE user_id = #{userId}
+          AND use_yn  = 'Y'
+    </update>
+
 </mapper>

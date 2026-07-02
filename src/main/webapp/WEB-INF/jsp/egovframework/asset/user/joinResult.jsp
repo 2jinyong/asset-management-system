@@ -47,14 +47,14 @@
         --%>
         <c:if test="${not empty userName}">
             <p class="text-muted mb-4">
-                <strong>${userName}</strong>님, 환영합니다!<br>
-                이제 로그인하여 비품관리시스템을 이용해보세요.
+                <strong>${userName}</strong>님, 가입 신청이 접수되었습니다!<br>
+                관리자 승인 후 로그인이 가능합니다.
             </p>
         </c:if>
         <c:if test="${empty userName}">
             <p class="text-muted mb-4">
-                회원가입이 완료되었습니다.<br>
-                로그인하여 비품관리시스템을 이용해보세요.
+                회원가입 신청이 완료되었습니다.<br>
+                관리자 승인 후 로그인이 가능합니다.
             </p>
         </c:if>
 

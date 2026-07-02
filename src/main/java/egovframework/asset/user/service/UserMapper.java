@@ -20,6 +20,8 @@ package egovframework.asset.user.service;
  *   예: selectUserByEmail() ↔ <select id="selectUserByEmail">
  * ============================================================
  */
+import java.util.List;
+
 import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
 
 @Mapper("userMapper") // Spring 빈 이름을 "userMapper" 로 등록
@@ -33,9 +35,50 @@ public interface UserMapper {
     int insertUser(UserVO userVO);
 
     /**
-     * 이메일로 사용자를 조회합니다. (로그인 및 중복 이메일 체크용)
+     * 이메일로 사용자를 조회합니다. (로그인용 - use_yn='Y' 인 활성 계정만)
      * @param email 조회할 이메일 주소
-     * @return 해당 이메일의 사용자 정보, 없으면 null
+     * @return 해당 이메일의 활성 사용자 정보, 없으면 null
      */
     UserVO selectUserByEmail(String email);
+
+    /**
+     * 이메일로 사용자를 조회합니다. (회원가입 중복 체크용 - use_yn 무관, 단 'N' 제외)
+     * @param email 조회할 이메일 주소
+     * @return 해당 이메일의 사용자 정보(활성/승인대기 포함), 없으면 null
+     */
+    UserVO selectUserByEmailAny(String email);
+
+    /**
+     * 이메일로 사용자를 조회합니다. (로그인 실패 메시지 구분용 - use_yn 상태와 무관하게 전부 조회)
+     * @param email 조회할 이메일 주소
+     * @return 해당 이메일의 사용자 정보(상태 무관), 없으면 null
+     */
+    UserVO selectUserByEmailAllStatus(String email);
+
+    /**
+     * 가입 승인 대기 중인(use_yn='P') 사용자 목록을 조회합니다.
+     * @return 승인 대기 사용자 목록
+     */
+    List<UserVO> selectPendingUserList();
+
+    /**
+     * 가입 승인 처리 - use_yn 을 'Y' 로 변경합니다.
+     * @param userId 승인할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int updateUserApprove(Long userId);
+
+    /**
+     * 가입 반려 처리 - use_yn 을 'R' 로 변경합니다.
+     * @param userId 반려할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int updateUserReject(Long userId);
+
+    /**
+     * 회원 탈퇴 처리 - use_yn 을 'N' 으로 변경합니다. (활성 계정만 대상)
+     * @param userId 탈퇴할 사용자 ID
+     * @return 처리된 행의 수
+     */
+    int updateUserWithdraw(Long userId);
 }

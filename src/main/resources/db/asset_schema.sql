@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `password`        VARCHAR(255)    NOT NULL                  COMMENT '비밀번호 (실무: BCrypt 암호화 저장)',
     `employee_number` VARCHAR(20)     NULL                      COMMENT '사원번호 (선택)',
     `role`            VARCHAR(20)     NOT NULL DEFAULT 'USER'   COMMENT '권한: ADMIN(관리자) / USER(일반)',
-    `use_yn`          CHAR(1)         NOT NULL DEFAULT 'Y'      COMMENT '사용여부: Y=활성, N=비활성(탈퇴)',
+    `use_yn`          CHAR(1)         NOT NULL DEFAULT 'Y'      COMMENT '사용여부: Y=활성, P=가입승인대기, R=가입반려, N=탈퇴',
     `reg_date`        DATETIME        DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시 (자동설정)',
     `update_date`     DATETIME        ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시 (자동갱신)',
     PRIMARY KEY (`user_id`)
