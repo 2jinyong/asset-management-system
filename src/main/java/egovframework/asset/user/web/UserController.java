@@ -167,14 +167,11 @@ public class UserController {
     /**
      * [메인 화면]
      * GET /user/main.do
-     * 세션에 로그인 정보 없으면 로그인 페이지로 강제 이동
+     * 로그인 여부는 LoginCheckInterceptor 가 이미 검사했으므로 여기서는 값만 꺼내 쓴다.
      */
     @GetMapping("/main.do")
     public String main(HttpSession session, Model model) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return "redirect:/user/loginView.do";
-        }
         model.addAttribute("loginUser", loginUser);
         return "user/main";
     }
@@ -192,14 +189,13 @@ public class UserController {
     /**
      * [회원 탈퇴]
      * POST /user/withdraw.do → 본인 계정 use_yn='N' 처리 후 세션 삭제, 로그인 페이지로 이동
-     * ADMIN 계정은 탈퇴 불가 (화면에서도 버튼을 숨기지만, 직접 URL 호출도 막아둠)
+     * 로그인 여부는 LoginCheckInterceptor 가 이미 검사했다.
+     * ADMIN 계정은 탈퇴 불가 — 이건 인증(로그인)이 아니라 업무 규칙이라 컨트롤러에 남겨둔다.
+     * (화면에서도 버튼을 숨기지만, 직접 URL 호출도 막아둠)
      */
     @PostMapping("/withdraw.do")
     public String withdraw(HttpSession session) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return "redirect:/user/loginView.do";
-        }
         if ("ADMIN".equals(loginUser.getRole())) {
             return "redirect:/main.do";
         }
@@ -215,14 +211,10 @@ public class UserController {
     /**
      * [가입 승인 대기 목록]
      * GET /user/pendingList.do
-     * ADMIN 이 아니면 메인으로 돌려보냄
+     * 로그인 + ADMIN 권한 검사는 LoginCheckInterceptor → AdminCheckInterceptor 가 처리한다.
      */
     @GetMapping("/pendingList.do")
-    public String pendingList(HttpSession session, Model model) {
-        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
-            return "redirect:/main.do";
-        }
+    public String pendingList(Model model) {
         model.addAttribute("pendingUsers", userService.getPendingUserList());
         return "/board/ApproveUserList";
     }
@@ -232,11 +224,7 @@ public class UserController {
      * POST /user/approve.do
      */
     @PostMapping("/approve.do")
-    public String approve(@RequestParam("userId") Long userId, HttpSession session) {
-        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
-            return "redirect:/main.do";
-        }
+    public String approve(@RequestParam("userId") Long userId) {
         userService.approveUser(userId);
         return "redirect:/user/pendingList.do";
     }
@@ -246,11 +234,7 @@ public class UserController {
      * POST /user/reject.do
      */
     @PostMapping("/reject.do")
-    public String reject(@RequestParam("userId") Long userId, HttpSession session) {
-        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
-            return "redirect:/main.do";
-        }
+    public String reject(@RequestParam("userId") Long userId) {
         userService.rejectUser(userId);
         return "redirect:/user/pendingList.do";
     }
