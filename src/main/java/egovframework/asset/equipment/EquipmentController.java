@@ -6,15 +6,21 @@ import egovframework.asset.cmmn.PageMaker;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpSession;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import egovframework.asset.user.service.UserVO;
-
+/*
+ * ============================================================
+ * [로그인/관리자 권한 체크는 인터셉터가 담당합니다]
+ * ============================================================
+ * 이 컨트롤러의 모든 요청은 dispatcher-servlet.xml 에 등록된
+ * LoginCheckInterceptor 를 거쳐야 도달합니다 (로그인 안 됐으면 로그인 화면으로 리다이렉트).
+ * approveList.do 는 추가로 AdminCheckInterceptor 를 거쳐 ADMIN 권한까지 검사됩니다.
+ * → 컨트롤러 메서드 안에서 session.getAttribute("loginUser") 를 직접 확인할 필요가 없습니다.
+ * ============================================================
+ */
 @Controller
 public class EquipmentController {
 
@@ -25,11 +31,7 @@ public class EquipmentController {
 	}
 
 	@RequestMapping("/main.do")
-	public String mainPage(HttpSession session, ModelMap model) {
-		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-		if (loginUser == null) {
-			return "redirect:/user/loginView.do";
-		}
+	public String mainPage(ModelMap model) {
 		List<Map<String, Object>> categorySummary = equipmentService.getCategorySummary();
 		model.addAttribute("categorySummary", categorySummary);
 		return "/board/TestUI";
@@ -88,12 +90,7 @@ public class EquipmentController {
 	public String approveList(
 	        @RequestParam(value = "type", defaultValue = "rental") String type,
 	        @RequestParam(value = "page", defaultValue = "1") int page,
-	        HttpSession session, ModelMap model) {
-
-		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-		if (loginUser == null || !"ADMIN".equals(loginUser.getRole())) {
-			return "redirect:/main.do";
-		}
+	        ModelMap model) {
 
 		// TODO: RENTAL/REPORT 테이블 연동 준비되면 더미 리스트를 실제 Service 조회로 교체
 		List<Map<String, Object>> fullList = buildDummyApprovalList(type);
