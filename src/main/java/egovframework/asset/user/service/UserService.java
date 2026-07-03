@@ -25,7 +25,7 @@ public interface UserService {
     /**
      * 회원가입 - 새로운 사용자를 등록합니다. (승인 대기 상태로 저장)
      * @param userVO 회원가입할 사용자 정보
-     * @return 1=성공, 0=이미 가입 신청했거나 가입된 이메일
+     * @return 1=성공, 0=이미 가입 신청했거나 가입된 이메일, 2=이미 사용 중인 사원번호
      */
     int insertUser(UserVO userVO);
 

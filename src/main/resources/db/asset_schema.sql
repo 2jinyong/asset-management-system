@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `user_name`       VARCHAR(50)     NOT NULL                  COMMENT '사용자 실명',
     `email`           VARCHAR(100)    NOT NULL UNIQUE           COMMENT '이메일 (로그인 아이디, 중복 불가)',
     `password`        VARCHAR(255)    NOT NULL                  COMMENT '비밀번호 (실무: BCrypt 암호화 저장)',
-    `employee_number` VARCHAR(20)     NULL                      COMMENT '사원번호 (선택)',
+    `employee_number` VARCHAR(20)     NULL                      COMMENT '사원번호 (앱단에서 중복 체크, 승인대기/활성 상태만 중복 취급)',
     `role`            VARCHAR(20)     NOT NULL DEFAULT 'USER'   COMMENT '권한: ADMIN(관리자) / USER(일반)',
     `use_yn`          CHAR(1)         NOT NULL DEFAULT 'Y'      COMMENT '사용여부: Y=활성, P=가입승인대기, R=가입반려, N=탈퇴',
     `reg_date`        DATETIME        DEFAULT CURRENT_TIMESTAMP COMMENT '가입일시 (자동설정)',
@@ -21,10 +21,11 @@ CREATE TABLE IF NOT EXISTS `users` (
     PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='사용자 계정 테이블';
 
--- 3. 초기 데이터 삽입
--- 주의: 실제 운영 환경에서는 비밀번호를 반드시 암호화(BCrypt 등)하여 저장하세요.
-INSERT INTO `users` (`user_name`, `email`, `password`, `employee_number`, `role`, `use_yn`)
-VALUES ('시스템관리자', 'admin@company.com', 'admin1234', 'ADM001', 'ADMIN', 'Y');
+-- 3. 관리자 계정 생성 방법
+-- 비밀번호는 애플리케이션에서 BCrypt로 암호화되므로, 여기서 평문으로 미리 넣어두지 않는다.
+-- 1) 일반 회원가입 화면에서 관리자로 쓸 계정을 정상적으로 가입한다. (role=USER, use_yn=P 로 저장됨)
+-- 2) DB에서 아래 쿼리로 해당 계정을 관리자 승인 상태로 직접 승격한다.
+--    UPDATE `users` SET `role` = 'ADMIN', `use_yn` = 'Y' WHERE `email` = '가입한이메일';
 
 
 -- ====================================================================================
