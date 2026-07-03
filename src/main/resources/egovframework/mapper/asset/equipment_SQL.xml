@@ -1,41 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
 <mapper namespace="egovframework.asset.equipment.EquipmentMapper">
+	<select id="selectEquipmentList" parameterType="map"
+		resultType="egovframework.asset.equipment.EquipmentVO">
+		SELECT equipment_id, equipment_name, category, status, qr_image_path,
+		created_at
+		FROM EQUIPMENT
+		<where>
+			<if test="category != null and category != ''">
+				AND category = #{category}
+			</if>
+		</where>
+		ORDER BY equipment_id ASC
+		LIMIT #{pageSize} OFFSET #{offset}
+	</select>
 
-    <select id="selectEquipmentList" parameterType="map" resultType="egovframework.asset.equipment.EquipmentVO">
-        SELECT equipment_id, equipment_name, category, status, qr_image_path, created_at
-        FROM EQUIPMENT
-        <where>
-            <if test="category != null and category != ''">
-                AND category = #{category}
-            </if>
-        </where>
-        ORDER BY equipment_id ASC
-        LIMIT #{pageSize} OFFSET #{offset}
-    </select>
+	<select id="selectEquipmentCount" parameterType="map"
+		resultType="int">
+		SELECT COUNT(*)
+		FROM EQUIPMENT
+		<where>
+			<if test="category != null and category != ''">
+				AND category = #{category}
+			</if>
+		</where>
+	</select>
 
-    <select id="selectEquipmentCount" parameterType="map" resultType="int">
-        SELECT COUNT(*)
-        FROM EQUIPMENT
-        <where>
-            <if test="category != null and category != ''">
-                AND category = #{category}
-            </if>
-        </where>
-    </select>
+	<select id="selectCategorySummary" resultType="map">
+		SELECT
+		category,
+		COUNT(*) AS total,
+		SUM(CASE WHEN status = 'AVAILABLE' THEN 1 ELSE 0
+		END) AS available,
+		SUM(CASE WHEN status = 'RENTED' THEN 1 ELSE 0 END)
+		AS rented,
+		SUM(CASE WHEN status = 'BROKEN' THEN 1 ELSE 0 END) AS broken
+		FROM EQUIPMENT
+		GROUP BY category
+		ORDER BY category
+	</select>
 
-    <select id="selectCategorySummary" resultType="map">
-        SELECT
-            category,
-            COUNT(*) AS total,
-            SUM(CASE WHEN status = 'AVAILABLE' THEN 1 ELSE 0 END) AS available,
-            SUM(CASE WHEN status = 'RENTED' THEN 1 ELSE 0 END) AS rented,
-            SUM(CASE WHEN status = 'BROKEN' THEN 1 ELSE 0 END) AS broken
-        FROM EQUIPMENT
-        GROUP BY category
-        ORDER BY category
-    </select>
+	<select id="selectMyRentalList" parameterType="long"
+		resultType="map">
+		SELECT
+		r.rental_id,
+		r.equipment_id,
+		e.equipment_name,
+		r.rental_date,
+		r.return_date,
+		r.request_status
+		FROM RENTAL r
+		JOIN EQUIPMENT e ON r.equipment_id =
+		e.equipment_id
+		WHERE r.user_id = #{userId}
+		AND r.actual_return_date IS NULL
+		ORDER BY r.rental_id DESC
+	</select>
 
+	<!-- 변경된 부분: 모델별로 그룹핑, 재고 수량 포함 -->
+	<select id="selectEquipmentByCategory" parameterType="string"
+		resultType="map">
+		SELECT
+		equipment_name,
+		category,
+		COUNT(*) AS available_count
+		FROM EQUIPMENT
+		WHERE category = #{category}
+		AND status = 'AVAILABLE'
+		GROUP BY equipment_name, category
+		HAVING COUNT(*) > 0
+		ORDER BY equipment_name ASC
+	</select>
+
+	<!-- 추가: 대여 요청 시 특정 모델의 AVAILABLE 비품 중 quantity개 조회용 -->
+	<select id="selectAvailableEquipmentIdsByName" parameterType="map"
+		resultType="long">
+		SELECT equipment_id
+		FROM EQUIPMENT
+		WHERE equipment_name = #{equipmentName}
+		AND status = 'AVAILABLE'
+		ORDER BY equipment_id ASC
+		LIMIT #{quantity}
+	</select>
 </mapper>
