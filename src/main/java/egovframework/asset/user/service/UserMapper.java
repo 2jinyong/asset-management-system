@@ -49,6 +49,13 @@ public interface UserMapper {
     UserVO selectUserByEmailAny(String email);
 
     /**
+     * 사원번호로 사용자를 조회합니다. (회원가입 중복 체크용 - use_yn 무관, 단 'N' 제외)
+     * @param employeeNumber 조회할 사원번호
+     * @return 해당 사원번호의 사용자 정보(활성/승인대기 포함), 없으면 null
+     */
+    UserVO selectUserByEmployeeNumberAny(String employeeNumber);
+
+    /**
      * 이메일로 사용자를 조회합니다. (로그인 실패 메시지 구분용 - use_yn 상태와 무관하게 전부 조회)
      * @param email 조회할 이메일 주소
      * @return 해당 이메일의 사용자 정보(상태 무관), 없으면 null
