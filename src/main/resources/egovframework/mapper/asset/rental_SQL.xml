@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.asset.equipment.RentalMapper">
+    <insert id="insertRental" parameterType="egovframework.asset.equipment.RentalVO">
+        INSERT INTO RENTAL (
+            equipment_id, user_id, quantity, purpose,
+            request_status, rental_date, return_date
+        ) VALUES (
+            #{equipmentId}, #{userId}, 1, #{purpose},
+            'REQUESTED', #{rentalDate}, #{returnDate}
+        )
+    </insert>
+
+    <update id="updateEquipmentStatus" parameterType="map">
+        UPDATE EQUIPMENT
+        SET status = #{status}, updated_at = NOW()
+        WHERE equipment_id = #{equipmentId}
+    </update>
+
+    <update id="updateReturnDate" parameterType="map">
+        UPDATE RENTAL
+        SET return_date = #{newReturnDate}
+        WHERE rental_id = #{rentalId}
+        AND user_id = #{userId}
+    </update>
+</mapper>
