@@ -86,6 +86,16 @@ function loadMyRentals() {
         opt.textContent = r.equipmentName + ' (반납예정 ' + r.returnDate + ')';
         sel.appendChild(opt);
       });
+
+      const params = new URLSearchParams(window.location.search);
+      const equipmentId = params.get('equipmentId');
+      if (equipmentId) {
+        const matchIdx = data.findIndex(r => String(r.equipmentId) === equipmentId);
+        if (matchIdx !== -1) {
+          sel.value = matchIdx;
+          showCurrent();
+        }
+      }
     })
     .catch(err => console.error('대여 목록 로드 실패:', err));
 }

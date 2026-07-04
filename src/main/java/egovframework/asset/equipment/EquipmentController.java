@@ -101,6 +101,26 @@ public class EquipmentController {
         return "/board/ReturnQr";
     }
 
+    @RequestMapping(value = "/returnSearch.do", method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> returnSearch(
+            @RequestParam("equipmentId") Long equipmentId) {
+        Map<String, Object> result = rentalService.findRentalByEquipmentId(equipmentId);
+        if (result == null) {
+            result = new HashMap<>();
+        }
+        return result;
+    }
+
+    @RequestMapping(value = "/returnProcess.do", method = RequestMethod.POST)
+    @ResponseBody
+    public String returnProcess(
+            @RequestParam("rentalId") Long rentalId,
+            @RequestParam("equipmentId") Long equipmentId) {
+        rentalService.processReturn(rentalId, equipmentId);
+        return "ok";
+    }
+
     @RequestMapping(value = "/extendRequest.do", method = RequestMethod.GET)
     public String extendRequestView() {
         return "/board/ExtendRequest";

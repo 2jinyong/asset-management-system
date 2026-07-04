@@ -60,4 +60,23 @@ public class RentalServiceImpl implements RentalService {
             throw new IllegalStateException("연장할 대여 건을 찾을 수 없습니다.");
         }
     }
+
+    @Override
+    public Map<String, Object> findRentalByEquipmentId(Long equipmentId) {
+        return rentalMapper.selectRentalByEquipmentId(equipmentId);
+    }
+
+    @Override
+    @Transactional
+    public void processReturn(Long rentalId, Long equipmentId) {
+        int deleted = rentalMapper.deleteRental(rentalId);
+        if (deleted == 0) {
+            throw new IllegalStateException("반납 처리할 대여 건을 찾을 수 없습니다.");
+        }
+
+        Map<String, Object> statusParams = new HashMap<>();
+        statusParams.put("equipmentId", equipmentId);
+        statusParams.put("status", "AVAILABLE");
+        rentalMapper.updateEquipmentStatus(statusParams);
+    }
 }
