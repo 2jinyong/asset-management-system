@@ -1,5 +1,7 @@
 package egovframework.asset.equipment;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,16 +17,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 public class EquipmentController {
 
     private final EquipmentService equipmentService;
     private final RentalService rentalService;
+    private final ReportService reportService;
 
-    public EquipmentController(EquipmentService equipmentService, RentalService rentalService) {
+    public EquipmentController(EquipmentService equipmentService, RentalService rentalService, ReportService reportService) {
         this.equipmentService = equipmentService;
         this.rentalService = rentalService;
+        this.reportService = reportService;
     }
 
     @RequestMapping("/main.do")
@@ -140,5 +145,40 @@ public class EquipmentController {
     @RequestMapping(value = "/reportIssue.do", method = RequestMethod.GET)
     public String reportIssue() {
         return "/board/ReportIssue";
+    }
+
+    @RequestMapping(value = "/reportIssue.do", method = RequestMethod.POST)
+    @ResponseBody
+    public String reportIssueSubmit(
+            @RequestParam("rentalId") Long rentalId,
+            @RequestParam("equipmentId") Long equipmentId,
+            @RequestParam("issueType") String issueType,
+            @RequestParam("content") String content,
+            @RequestParam("image") MultipartFile image,
+            HttpSession session) {
+
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+
+        String uploadDir = "C:/asset-uploads/report/";
+        String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+        String savePath = uploadDir + fileName;
+
+        try {
+            image.transferTo(new File(savePath));
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 저장 실패", e);
+        }
+
+        ReportVO reportVO = new ReportVO();
+        reportVO.setRentalId(rentalId);
+        reportVO.setEquipmentId(equipmentId);
+        reportVO.setUserId(loginUser.getUserId());
+        reportVO.setIssueType(issueType);
+        reportVO.setContent(content);
+        reportVO.setImagePath(savePath);
+
+        reportService.insertReport(reportVO);
+
+        return "ok";
     }
 }

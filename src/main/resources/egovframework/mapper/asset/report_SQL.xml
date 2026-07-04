@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="egovframework.asset.equipment.ReportMapper">
+    <insert id="insertReport" parameterType="egovframework.asset.equipment.ReportVO">
+        INSERT INTO REPORT (
+            equipment_id, user_id, issue_type, content, image_path, status, created_at
+        ) VALUES (
+            #{equipmentId}, #{userId}, #{issueType}, #{content}, #{imagePath}, 'PENDING', NOW()
+        )
+    </insert>
+</mapper>

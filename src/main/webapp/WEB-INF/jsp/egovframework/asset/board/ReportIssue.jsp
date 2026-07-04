@@ -57,8 +57,6 @@
       <label>대여 중인 비품 선택</label>
       <select id="itemSelect" onchange="showItemInfo()">
         <option value="">-- 선택 --</option>
-        <option value="0">노트북 LG그램 15 (NTB-003)</option>
-        <option value="1">캐논 EOS 카메라 (CAM-001)</option>
       </select>
       <div class="item-info" id="itemInfo">
         <table>
@@ -70,61 +68,133 @@
     <div class="form-group">
       <label>문제 유형</label>
       <div class="type-grid">
-        <div class="type-btn" onclick="selectType(this)">🔧 파손</div>
-        <div class="type-btn" onclick="selectType(this)">⚡ 작동 불량</div>
-        <div class="type-btn" onclick="selectType(this)">🔋 배터리 문제</div>
-        <div class="type-btn" onclick="selectType(this)">🖥 화면 이상</div>
-        <div class="type-btn" onclick="selectType(this)">🔌 연결 문제</div>
-        <div class="type-btn" onclick="selectType(this)">📝 기타</div>
+        <div class="type-btn" data-type="BROKEN" onclick="selectType(this)">🔧 파손</div>
+        <div class="type-btn" data-type="MALFUNCTION" onclick="selectType(this)">⚡ 작동 불량</div>
+        <div class="type-btn" data-type="BATTERY" onclick="selectType(this)">🔋 배터리 문제</div>
+        <div class="type-btn" data-type="SCREEN" onclick="selectType(this)">🖥 화면 이상</div>
+        <div class="type-btn" data-type="CONNECTION" onclick="selectType(this)">🔌 연결 문제</div>
+        <div class="type-btn" data-type="ETC" onclick="selectType(this)">📝 기타</div>
       </div>
     </div>
     <div class="form-group">
       <label>상세 내용</label>
-      <textarea placeholder="문제 상황을 자세히 설명해 주세요"></textarea>
+      <textarea id="contentInput" placeholder="문제 상황을 자세히 설명해 주세요"></textarea>
     </div>
     <div class="form-group">
-      <label>사진 첨부 (S3 업로드)</label>
+      <label>사진 첨부</label>
       <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept="image/*" multiple onchange="previewImages(event)">
+        <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
         <div class="upload-icon">📎</div>
         <p>클릭하여 사진 첨부</p>
         <p style="font-size:11px; margin-top:4px;">JPG, PNG 최대 5MB</p>
       </div>
       <div class="preview-wrap" id="previewWrap"></div>
     </div>
-    <button class="btn-submit" onclick="alert('문제 신고가 접수되었습니다. 관리자가 확인 후 연락드립니다.')">신고 제출</button>
+    <button class="btn-submit" onclick="submitReport()">신고 제출</button>
   </div>
 </div>
 <script>
-const items = [
-  { model: 'LG그램 15', serial: 'NTB-003' },
-  { model: '캐논 EOS R50', serial: 'CAM-001' }
-];
+let rentals = [];
+let selectedType = '';
+
+function loadMyRentals() {
+  fetch('myRentalList.do')
+    .then(res => res.json())
+    .then(data => {
+      rentals = data;
+      const sel = document.getElementById('itemSelect');
+      sel.innerHTML = '<option value="">-- 선택 --</option>';
+      if (data.length === 0) {
+        sel.innerHTML = '<option value="">대여 중인 비품이 없습니다.</option>';
+        return;
+      }
+      data.forEach((r, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = r.equipmentName + ' (' + r.equipmentId + ')';
+        sel.appendChild(opt);
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      const equipmentId = params.get('equipmentId');
+      if (equipmentId) {
+        const matchIdx = data.findIndex(r => String(r.equipmentId) === equipmentId);
+        if (matchIdx !== -1) {
+          sel.value = matchIdx;
+          showItemInfo();
+        }
+      }
+    })
+    .catch(err => console.error('대여 목록 로드 실패:', err));
+}
+
 function showItemInfo() {
   const idx = document.getElementById('itemSelect').value;
   const box = document.getElementById('itemInfo');
   if (idx !== '') {
-    document.getElementById('infoModel').textContent = items[idx].model;
-    document.getElementById('infoSerial').textContent = items[idx].serial;
+    const r = rentals[idx];
+    document.getElementById('infoModel').textContent = r.equipmentName;
+    document.getElementById('infoSerial').textContent = r.equipmentId;
     box.style.display = 'block';
   } else {
     box.style.display = 'none';
   }
 }
+
 function selectType(el) {
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  selectedType = el.getAttribute('data-type');
 }
-function previewImages(e) {
+
+function previewImage(e) {
   const wrap = document.getElementById('previewWrap');
   wrap.innerHTML = '';
-  Array.from(e.target.files).forEach(file => {
+  const file = e.target.files[0];
+  if (file) {
     const img = document.createElement('img');
     img.className = 'preview-img';
     img.src = URL.createObjectURL(file);
     wrap.appendChild(img);
-  });
+  }
 }
+
+function submitReport() {
+  const idx = document.getElementById('itemSelect').value;
+  const content = document.getElementById('contentInput').value.trim();
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+
+  if (idx === '') { alert('비품을 선택하세요.'); return; }
+  if (!selectedType) { alert('문제 유형을 선택하세요.'); return; }
+  if (!content) { alert('상세 내용을 입력하세요.'); return; }
+  if (!file) { alert('사진을 첨부하세요.'); return; }
+
+  const r = rentals[idx];
+
+  const formData = new FormData();
+  formData.append('rentalId', r.rentalId);
+  formData.append('equipmentId', r.equipmentId);
+  formData.append('issueType', selectedType);
+  formData.append('content', content);
+  formData.append('image', file);
+
+  fetch('reportIssue.do', {
+    method: 'POST',
+    body: formData
+  })
+    .then(res => res.text())
+    .then(() => {
+      alert('문제 신고가 접수되었습니다. 관리자가 확인 후 연락드립니다.');
+      location.href = 'main.do';
+    })
+    .catch(err => {
+      console.error('신고 제출 실패:', err);
+      alert('신고 제출 중 오류가 발생했습니다.');
+    });
+}
+
+loadMyRentals();
 </script>
 </body>
 </html>
