@@ -59,7 +59,7 @@
     <div class="form-group">
       <label>시리얼 넘버 직접 입력</label>
       <div class="input-row">
-        <input type="text" id="serialInput" placeholder="예: CAM-001">
+        <input type="text" id="serialInput" placeholder="예: 78">
         <button class="btn-search" onclick="searchItem()">조회</button>
       </div>
     </div>
@@ -71,29 +71,74 @@
         <tr><td>반납 예정일</td><td id="retDue">-</td></tr>
       </table>
     </div>
-    <button class="btn-submit" onclick="alert('반납 처리 완료')">반납 확인</button>
+    <button class="btn-submit" onclick="submitReturn()">반납 확인</button>
   </div>
 </div>
 <script>
-const dummyItems = {
-  'CAM-001': { name: '캐논 EOS R50', user: '김재민', due: '2026.06.28' },
-  'MON-001': { name: 'LG 27인치 4K', user: '김재민', due: '2026.07.01' }
-};
+let currentRental = null;
+
 function searchItem() {
-  const serial = document.getElementById('serialInput').value.trim();
+  const equipmentId = document.getElementById('serialInput').value.trim();
   const box = document.getElementById('itemConfirm');
-  if (dummyItems[serial]) {
-    const it = dummyItems[serial];
-    document.getElementById('retName').textContent = it.name;
-    document.getElementById('retSerial').textContent = serial;
-    document.getElementById('retUser').textContent = it.user;
-    document.getElementById('retDue').textContent = it.due;
-    box.style.display = 'block';
-  } else {
-    alert('해당 모델번호의 대여 내역이 없습니다.');
-    box.style.display = 'none';
+
+  if (!equipmentId) {
+    alert('시리얼 넘버(장비 ID)를 입력하세요.');
+    return;
   }
+
+  fetch('returnSearch.do?equipmentId=' + encodeURIComponent(equipmentId))
+    .then(res => res.json())
+    .then(data => {
+      if (!data || !data.rentalId) {
+        alert('해당 장비의 대여 내역이 없습니다.');
+        box.style.display = 'none';
+        currentRental = null;
+        return;
+      }
+      currentRental = data;
+      document.getElementById('retName').textContent = data.equipmentName;
+      document.getElementById('retSerial').textContent = data.equipmentId;
+      document.getElementById('retUser').textContent = data.userName;
+      document.getElementById('retDue').textContent = data.returnDate;
+      box.style.display = 'block';
+    })
+    .catch(err => {
+      console.error('조회 실패:', err);
+      alert('조회 중 오류가 발생했습니다.');
+    });
 }
+
+function submitReturn() {
+  if (!currentRental) {
+    alert('먼저 시리얼 넘버로 조회해주세요.');
+    return;
+  }
+
+  fetch('returnProcess.do', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'rentalId=' + encodeURIComponent(currentRental.rentalId)
+        + '&equipmentId=' + encodeURIComponent(currentRental.equipmentId)
+  })
+    .then(res => res.text())
+    .then(() => {
+      alert('반납 처리 완료');
+      location.href = 'main.do';
+    })
+    .catch(err => {
+      console.error('반납 처리 실패:', err);
+      alert('반납 처리 중 오류가 발생했습니다.');
+    });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+	  const params = new URLSearchParams(window.location.search);
+	  const equipmentId = params.get('equipmentId');
+	  if (equipmentId) {
+	    document.getElementById('serialInput').value = equipmentId;
+	    searchItem();
+	  }
+	});
 </script>
 </body>
 </html>

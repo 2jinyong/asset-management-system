@@ -11,17 +11,32 @@
             'REQUESTED', #{rentalDate}, #{returnDate}
         )
     </insert>
-
     <update id="updateEquipmentStatus" parameterType="map">
         UPDATE EQUIPMENT
         SET status = #{status}, updated_at = NOW()
         WHERE equipment_id = #{equipmentId}
     </update>
-
     <update id="updateReturnDate" parameterType="map">
         UPDATE RENTAL
         SET return_date = #{newReturnDate}
         WHERE rental_id = #{rentalId}
         AND user_id = #{userId}
     </update>
+    <select id="selectRentalByEquipmentId" parameterType="long" resultType="map">
+        SELECT
+            r.rental_id AS rentalId,
+            r.equipment_id AS equipmentId,
+            e.equipment_name AS equipmentName,
+            u.user_name AS userName,
+            r.rental_date AS rentalDate,
+            r.return_date AS returnDate
+        FROM RENTAL r
+        JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
+        JOIN users u ON r.user_id = u.user_id
+        WHERE r.equipment_id = #{equipmentId}
+    </select>
+    <delete id="deleteRental" parameterType="long">
+        DELETE FROM RENTAL
+        WHERE rental_id = #{rentalId}
+    </delete>
 </mapper>
