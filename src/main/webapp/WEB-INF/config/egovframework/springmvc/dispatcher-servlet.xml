@@ -72,6 +72,15 @@
     <bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"/>
 
     <!--
+        [CommonsMultipartResolver]
+        이미지/파일 업로드(multipart/form-data) 요청을 처리할 수 있게 해주는 설정.
+        maxUploadSize: 파일 최대 크기 (바이트 단위, 여기선 5MB)
+    -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="5242880"/>
+    </bean>
+
+    <!--
         [예외 발생 시 이동할 뷰 매핑]
         SimpleMappingExceptionResolver: 예외 종류에 따라 보여줄 JSP를 지정합니다.
         뷰 이름 "cmmn/egovError" → ViewResolver가
