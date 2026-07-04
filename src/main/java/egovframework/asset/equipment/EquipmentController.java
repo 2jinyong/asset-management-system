@@ -75,6 +75,14 @@ public class EquipmentController {
         return equipmentService.getEquipmentByCategory(category);
     }
 
+    @RequestMapping(value = "/myRentalList.do", method = RequestMethod.GET)
+    @ResponseBody
+    public List<Map<String, Object>> getMyRentalList(HttpSession session) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) return new java.util.ArrayList<>();
+        return equipmentService.getMyRentalList(loginUser.getUserId());
+    }
+
     @RequestMapping(value = "/rentalRequest.do", method = RequestMethod.GET)
     public String rentalRequestView() {
         return "/board/RentalRequest";
@@ -88,29 +96,14 @@ public class EquipmentController {
         return "redirect:/main.do";
     }
 
-    @RequestMapping("/returnQr.do")
+    @RequestMapping(value = "/returnQr.do", method = RequestMethod.GET)
     public String returnQr() {
         return "/board/ReturnQr";
     }
 
     @RequestMapping(value = "/extendRequest.do", method = RequestMethod.GET)
-    public String extendRequest() {
+    public String extendRequestView() {
         return "/board/ExtendRequest";
-    }
-
-    @RequestMapping("/reportIssue.do")
-    public String reportIssue() {
-        return "/board/ReportIssue";
-    }
-
-    @RequestMapping(value = "/myRentalList.do", method = RequestMethod.GET)
-    @ResponseBody
-    public List<Map<String, Object>> myRentalListAjax(HttpSession session) {
-        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            throw new IllegalStateException("로그인이 필요합니다.");
-        }
-        return equipmentService.getMyRentalList(loginUser.getUserId());
     }
 
     @RequestMapping(value = "/extendRequest.do", method = RequestMethod.POST)
@@ -120,10 +113,12 @@ public class EquipmentController {
             @RequestParam("newReturnDate") String newReturnDate,
             HttpSession session) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            throw new IllegalStateException("로그인이 필요합니다.");
-        }
         rentalService.extendRental(rentalId, loginUser.getUserId(), newReturnDate);
         return "ok";
+    }
+
+    @RequestMapping(value = "/reportIssue.do", method = RequestMethod.GET)
+    public String reportIssue() {
+        return "/board/ReportIssue";
     }
 }

@@ -83,7 +83,7 @@ function loadMyRentals() {
       data.forEach((r, idx) => {
         const opt = document.createElement('option');
         opt.value = idx;
-        opt.textContent = r.equipment_name + ' (반납예정 ' + r.return_date + ')';
+        opt.textContent = r.equipmentName + ' (반납예정 ' + r.returnDate + ')';
         sel.appendChild(opt);
       });
     })
@@ -95,8 +95,8 @@ function showCurrent() {
   const info = document.getElementById('currentInfo');
   if (idx !== '') {
     const r = rentals[idx];
-    document.getElementById('curModel').textContent = r.equipment_name;
-    document.getElementById('curDue').textContent = r.return_date;
+    document.getElementById('curModel').textContent = r.equipmentName;
+    document.getElementById('curDue').textContent = r.returnDate;
     info.style.display = 'block';
   } else {
     info.style.display = 'none';
@@ -115,7 +115,7 @@ function submitExtend() {
   fetch('extendRequest.do', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'rentalId=' + encodeURIComponent(r.rental_id) + '&newReturnDate=' + encodeURIComponent(newDate)
+    body: 'rentalId=' + encodeURIComponent(r.rentalId) + '&newReturnDate=' + encodeURIComponent(newDate)
   })
     .then(res => res.text())
     .then(() => {

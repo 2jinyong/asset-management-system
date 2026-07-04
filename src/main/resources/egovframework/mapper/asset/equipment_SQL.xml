@@ -15,7 +15,6 @@
 		ORDER BY equipment_id ASC
 		LIMIT #{pageSize} OFFSET #{offset}
 	</select>
-
 	<select id="selectEquipmentCount" parameterType="map"
 		resultType="int">
 		SELECT COUNT(*)
@@ -26,7 +25,6 @@
 			</if>
 		</where>
 	</select>
-
 	<select id="selectCategorySummary" resultType="map">
 		SELECT
 		category,
@@ -40,24 +38,18 @@
 		GROUP BY category
 		ORDER BY category
 	</select>
-
-	<select id="selectMyRentalList" parameterType="long"
-		resultType="map">
-		SELECT
-		r.rental_id,
-		r.equipment_id,
-		e.equipment_name,
-		r.rental_date,
-		r.return_date,
-		r.request_status
-		FROM RENTAL r
-		JOIN EQUIPMENT e ON r.equipment_id =
-		e.equipment_id
-		WHERE r.user_id = #{userId}
-		AND r.actual_return_date IS NULL
-		ORDER BY r.rental_id DESC
-	</select>
-
+	<select id="selectMyRentalList" parameterType="long" resultType="map">
+    SELECT
+        r.rental_id AS rentalId,
+        e.equipment_name AS equipmentName,
+        r.rental_date AS rentalDate,
+        r.return_date AS returnDate,
+        r.request_status AS requestStatus
+    FROM RENTAL r
+    JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
+    WHERE r.user_id = #{userId}
+    ORDER BY r.rental_id DESC
+</select>
 	<!-- 변경된 부분: 모델별로 그룹핑, 재고 수량 포함 -->
 	<select id="selectEquipmentByCategory" parameterType="string"
 		resultType="map">
@@ -72,7 +64,6 @@
 		HAVING COUNT(*) > 0
 		ORDER BY equipment_name ASC
 	</select>
-
 	<!-- 추가: 대여 요청 시 특정 모델의 AVAILABLE 비품 중 quantity개 조회용 -->
 	<select id="selectAvailableEquipmentIdsByName" parameterType="map"
 		resultType="long">

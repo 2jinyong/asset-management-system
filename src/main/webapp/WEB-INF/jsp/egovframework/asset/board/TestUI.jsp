@@ -130,18 +130,18 @@
         <c:otherwise>
           <c:forEach var="rental" items="${myRentalList}">
           <tr>
-            <td>${rental.equipment_name}</td>
-            <td>${rental.rental_date}</td>
-            <td>${rental.return_date}</td>
+            <td>${rental.equipmentName}</td>
+            <td>${rental.rentalDate}</td>
+            <td>${rental.returnDate}</td>
             <td>
               <c:choose>
-                <c:when test="${rental.request_status == 'REQUESTED'}">
+                <c:when test="${rental.requestStatus == 'REQUESTED'}">
                   <span class="badge using">승인 요청</span>
                 </c:when>
-                <c:when test="${rental.request_status == 'APPROVED'}">
+                <c:when test="${rental.requestStatus == 'APPROVED'}">
                   <span class="badge done">대여 중</span>
                 </c:when>
-                <c:when test="${rental.request_status == 'REJECTED'}">
+                <c:when test="${rental.requestStatus == 'REJECTED'}">
                   <span class="badge due">반려</span>
                 </c:when>
               </c:choose>
