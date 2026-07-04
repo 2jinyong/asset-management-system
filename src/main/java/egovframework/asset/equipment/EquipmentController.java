@@ -93,7 +93,7 @@ public class EquipmentController {
         return "/board/ReturnQr";
     }
 
-    @RequestMapping("/extendRequest.do")
+    @RequestMapping(value = "/extendRequest.do", method = RequestMethod.GET)
     public String extendRequest() {
         return "/board/ExtendRequest";
     }
@@ -102,11 +102,14 @@ public class EquipmentController {
     public String reportIssue() {
         return "/board/ReportIssue";
     }
-    
+
     @RequestMapping(value = "/myRentalList.do", method = RequestMethod.GET)
     @ResponseBody
     public List<Map<String, Object>> myRentalListAjax(HttpSession session) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
         return equipmentService.getMyRentalList(loginUser.getUserId());
     }
 
@@ -117,6 +120,9 @@ public class EquipmentController {
             @RequestParam("newReturnDate") String newReturnDate,
             HttpSession session) {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            throw new IllegalStateException("로그인이 필요합니다.");
+        }
         rentalService.extendRental(rentalId, loginUser.getUserId(), newReturnDate);
         return "ok";
     }

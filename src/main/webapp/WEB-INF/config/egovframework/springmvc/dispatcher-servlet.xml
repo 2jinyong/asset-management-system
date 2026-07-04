@@ -34,7 +34,13 @@
     <!--
         [인터셉터 설정]
         mvc:interceptors 를 사용하면 특정 URL 패턴에만 인터셉터를 적용할 수 있습니다.
-        LocaleChangeInterceptor: URL 파라미터 ?language=ko 로 언어 변경 가능
+        여러 인터셉터가 등록되면 위에서부터 순서대로 preHandle() 이 실행됩니다.
+
+        ① LocaleChangeInterceptor: URL 파라미터 ?language=ko 로 언어 변경 가능
+        ② LoginCheckInterceptor  : 로그인/회원가입 화면을 제외한 모든 요청에서 세션 검사
+                                    (예전에는 각 컨트롤러 메서드마다 동일한 세션 체크 코드를 직접 넣었음)
+        ③ AdminCheckInterceptor  : 가입승인/반려, 승인 목록 등 ADMIN 전용 경로에서 role 검사
+                                    (② 뒤에 실행되므로 이 시점엔 로그인은 이미 보장된 상태)
     -->
     <mvc:interceptors>
         <mvc:interceptor>
@@ -42,6 +48,23 @@
             <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
                 <property name="paramName" value="language"/>
             </bean>
+        </mvc:interceptor>
+
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <mvc:exclude-mapping path="/user/loginView.do"/>
+            <mvc:exclude-mapping path="/user/login.do"/>
+            <mvc:exclude-mapping path="/user/registerView.do"/>
+            <mvc:exclude-mapping path="/user/register.do"/>
+            <bean class="egovframework.asset.cmmn.LoginCheckInterceptor"/>
+        </mvc:interceptor>
+
+        <mvc:interceptor>
+            <mvc:mapping path="/user/pendingList.do"/>
+            <mvc:mapping path="/user/approve.do"/>
+            <mvc:mapping path="/user/reject.do"/>
+            <mvc:mapping path="/approveList.do"/>
+            <bean class="egovframework.asset.cmmn.AdminCheckInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>
 
