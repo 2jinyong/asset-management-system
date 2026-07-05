@@ -95,6 +95,27 @@
     </select>
 
     <!--
+        [SELECT - 사원번호로 사용자 단건 조회 (회원가입 중복 체크용)]
+        selectUserByEmailAny 와 동일한 기준: 승인대기('P')/활성('Y') 상태만 중복으로 취급.
+        반려('R')/탈퇴('N') 상태의 사원번호는 재사용 가능.
+    -->
+    <select id="selectUserByEmployeeNumberAny" parameterType="String" resultType="userVO">
+        SELECT
+            user_id,
+            user_name,
+            email,
+            password,
+            employee_number,
+            role,
+            use_yn,
+            reg_date,
+            update_date
+        FROM users
+        WHERE employee_number = #{employeeNumber}
+          AND use_yn IN ('Y', 'P')
+    </select>
+
+    <!--
         [SELECT - 이메일로 사용자 단건 조회 (상태 무관, 전체)]
         로그인 실패 시 "왜" 실패했는지(P=승인대기, N=반려/비활성, 없음=이메일/비번 오류) 구분하는 용도.
         selectUserByEmailAny 와 달리 'N' 상태도 포함해서 조회한다.

@@ -57,6 +57,62 @@ body {
 	font-weight: bold;
 }
 
+.btn {
+	font-size: 12px;
+	padding: 5px 12px;
+	border-radius: 6px;
+	border: none;
+	cursor: pointer;
+	font-weight: bold;
+	text-decoration: none;
+	display: inline-block;
+}
+
+.btn-logout {
+	background: #f0f0f0;
+	color: #555;
+}
+
+.btn-withdraw {
+	background: #fff0f0;
+	color: #c0392b;
+}
+
+form.inline {
+	display: inline;
+}
+
+.btn-register {
+	background: #2d5be3;
+	color: #fff;
+	margin-left: auto;
+}
+
+.btn-edit {
+	background: #e8f0fe;
+	color: #2d5be3;
+}
+
+.btn-delete {
+	background: #ffeaea;
+	color: #c0392b;
+}
+
+.btn-group {
+	display: flex;
+	gap: 6px;
+}
+
+.error-banner {
+	background: #ffeaea;
+	color: #c0392b;
+	border-radius: 8px;
+	padding: 12px 16px;
+	font-size: 13px;
+	font-weight: bold;
+	margin-bottom: 16px;
+}
+
 .container {
 	max-width: 960px;
 	margin: 32px auto;
@@ -190,8 +246,18 @@ body {
 	<div class="header">
 		<a href="main.do" class="logo">&#128230; 사내 비품 관리 시스템</a>
 		<div class="user-info">
-			<div class="avatar">김</div>
-			<span>김재민 님</span>
+			<c:if test="${sessionScope.loginUser.role == 'USER'}">
+				<div class="avatar">사원</div>
+			</c:if>
+			<span>${sessionScope.loginUser.userName}</span>
+			<a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
+			<c:if test="${sessionScope.loginUser.role == 'USER'}">
+				<form class="inline" method="post"
+					action="<%=request.getContextPath()%>/user/withdraw.do"
+					onsubmit="return confirm('정말 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없습니다.');">
+					<button type="submit" class="btn btn-withdraw">회원 탈퇴</button>
+				</form>
+			</c:if>
 		</div>
 	</div>
 
@@ -201,7 +267,15 @@ body {
 			<p class="page-title">${category}목록</p>
 			<span class="total-count">총 ${pageMaker.paging != null ? '' : ''}
 				건</span>
+			<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+				<a href="categoryList.do" class="btn btn-register">🏷 카테고리 관리</a>
+				<a href="equipmentForm.do" class="btn btn-register">➕ 비품 등록</a>
+			</c:if>
 		</div>
+
+		<c:if test="${param.error == 'hasHistory'}">
+			<div class="error-banner">대여 이력이 있는 비품은 삭제할 수 없습니다.</div>
+		</c:if>
 
 		<table class="equipment-table">
 			<thead>
@@ -210,13 +284,16 @@ body {
 					<th>비품명</th>
 					<th>카테고리</th>
 					<th>상태</th>
+					<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+						<th>관리</th>
+					</c:if>
 				</tr>
 			</thead>
 			<tbody>
 				<c:choose>
 					<c:when test="${empty equipmentList}">
 						<tr>
-							<td colspan="4"
+							<td colspan="5"
 								style="text-align: center; color: #aaa; padding: 30px;">해당
 								카테고리의 비품이 없습니다.</td>
 						</tr>
@@ -238,6 +315,19 @@ body {
 											<span class="badge badge-broken">신고 접수</span>
 										</c:when>
 									</c:choose></td>
+								<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+									<td>
+										<div class="btn-group">
+											<a href="equipmentForm.do?equipmentId=${item.equipmentId}" class="btn btn-edit">수정</a>
+											<form class="inline" method="post" action="equipmentDelete.do"
+												onsubmit="return confirm('${item.equipmentName}을(를) 삭제하시겠습니까?');">
+												<input type="hidden" name="equipmentId" value="${item.equipmentId}">
+												<input type="hidden" name="category" value="${category}">
+												<button type="submit" class="btn btn-delete">삭제</button>
+											</form>
+										</div>
+									</td>
+								</c:if>
 							</tr>
 						</c:forEach>
 					</c:otherwise>

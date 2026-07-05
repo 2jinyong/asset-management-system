@@ -2,41 +2,50 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="egovframework.asset.equipment.EquipmentMapper">
+	<!--
+		EQUIPMENT.category_id 는 CATEGORY(category_id, category_name) 를 참조하는 FK.
+		화면/컨트롤러는 예전처럼 카테고리 "이름" 문자열만 주고받으면 되도록,
+		조회 결과는 항상 c.category_name 을 category 라는 별칭으로 내려주고,
+		등록/수정 시에는 전달받은 카테고리 이름으로 CATEGORY 를 조인해 category_id 를 찾아 저장한다.
+	-->
 	<select id="selectEquipmentList" parameterType="map"
 		resultType="egovframework.asset.equipment.EquipmentVO">
-		SELECT equipment_id, equipment_name, category, status, qr_image_path,
-		created_at
-		FROM EQUIPMENT
+		SELECT e.equipment_id, e.equipment_name, c.category_name AS category,
+		e.status, e.qr_image_path, e.created_at
+		FROM EQUIPMENT e
+		JOIN CATEGORY c ON e.category_id = c.category_id
 		<where>
 			<if test="category != null and category != ''">
-				AND category = #{category}
+				AND c.category_name = #{category}
 			</if>
 		</where>
-		ORDER BY equipment_id ASC
+		ORDER BY e.equipment_id ASC
 		LIMIT #{pageSize} OFFSET #{offset}
 	</select>
 	<select id="selectEquipmentCount" parameterType="map"
 		resultType="int">
 		SELECT COUNT(*)
-		FROM EQUIPMENT
+		FROM EQUIPMENT e
+		JOIN CATEGORY c ON e.category_id = c.category_id
 		<where>
 			<if test="category != null and category != ''">
-				AND category = #{category}
+				AND c.category_name = #{category}
 			</if>
 		</where>
 	</select>
 	<select id="selectCategorySummary" resultType="map">
 		SELECT
-		category,
+		c.category_name AS category,
 		COUNT(*) AS total,
-		SUM(CASE WHEN status = 'AVAILABLE' THEN 1 ELSE 0
+		SUM(CASE WHEN e.status = 'AVAILABLE' THEN 1 ELSE 0
 		END) AS available,
-		SUM(CASE WHEN status = 'RENTED' THEN 1 ELSE 0 END)
+		SUM(CASE WHEN e.status = 'RENTED' THEN 1 ELSE 0 END)
 		AS rented,
-		SUM(CASE WHEN status = 'BROKEN' THEN 1 ELSE 0 END) AS broken
-		FROM EQUIPMENT
-		GROUP BY category
-		ORDER BY category
+		SUM(CASE WHEN e.status = 'BROKEN' THEN 1 ELSE 0 END) AS broken
+		FROM EQUIPMENT e
+		JOIN CATEGORY c ON e.category_id = c.category_id
+		GROUP BY c.category_name
+		ORDER BY c.category_name
 	</select>
 	<select id="selectMyRentalList" parameterType="long"
 		resultType="map">
@@ -56,16 +65,17 @@
 	<select id="selectEquipmentByCategory" parameterType="string"
 		resultType="map">
 		SELECT
-		equipment_name,
-		category,
+		e.equipment_name,
+		c.category_name AS category,
 		COUNT(*) AS available_count
-		FROM EQUIPMENT
-		WHERE category = #{category}
-		AND status = 'AVAILABLE'
-		GROUP BY equipment_name, category
+		FROM EQUIPMENT e
+		JOIN CATEGORY c ON e.category_id = c.category_id
+		WHERE c.category_name = #{category}
+		AND e.status = 'AVAILABLE'
+		GROUP BY e.equipment_name, c.category_name
 		HAVING COUNT(*) > 0
 		ORDER BY
-		equipment_name ASC
+		e.equipment_name ASC
 	</select>
 	<!-- 추가: 대여 요청 시 특정 모델의 AVAILABLE 비품 중 quantity개 조회용 -->
 	<select id="selectAvailableEquipmentIdsByName"
@@ -79,4 +89,65 @@
 		equipment_id ASC
 		LIMIT #{quantity}
 	</select>
+
+	<!-- 비품 등록/수정/삭제 (관리자 전용) -->
+	<select id="selectEquipmentById" parameterType="long"
+		resultType="egovframework.asset.equipment.EquipmentVO">
+		SELECT e.equipment_id, e.equipment_name, c.category_name AS category,
+		e.status, e.qr_image_path, e.created_at, e.updated_at
+		FROM EQUIPMENT e
+		JOIN CATEGORY c ON e.category_id = c.category_id
+		WHERE e.equipment_id = #{equipmentId}
+	</select>
+	<insert id="insertEquipment"
+		parameterType="egovframework.asset.equipment.EquipmentVO">
+		INSERT INTO EQUIPMENT (equipment_name, category_id, status, created_at)
+		SELECT #{equipmentName}, category_id, 'AVAILABLE', NOW()
+		FROM CATEGORY
+		WHERE category_name = #{category}
+	</insert>
+	<update id="updateEquipment"
+		parameterType="egovframework.asset.equipment.EquipmentVO">
+		UPDATE EQUIPMENT e
+		JOIN CATEGORY c ON c.category_name = #{category}
+		SET e.equipment_name = #{equipmentName},
+		e.category_id = c.category_id,
+		e.status = #{status},
+		e.updated_at = NOW()
+		WHERE e.equipment_id = #{equipmentId}
+	</update>
+	<delete id="deleteEquipment" parameterType="long">
+		DELETE FROM EQUIPMENT
+		WHERE equipment_id = #{equipmentId}
+	</delete>
+
+	<!-- 카테고리 마스터 (관리자 전용) -->
+	<select id="selectAllCategoryNames" resultType="string">
+		SELECT category_name
+		FROM CATEGORY
+		ORDER BY category_name
+	</select>
+	<select id="selectAllCategories" parameterType="map" resultType="map">
+		SELECT category_id AS categoryId, category_name AS categoryName
+		FROM CATEGORY
+		ORDER BY category_name
+		LIMIT #{pageSize} OFFSET #{offset}
+	</select>
+	<select id="selectCategoryCount" resultType="int">
+		SELECT COUNT(*)
+		FROM CATEGORY
+	</select>
+	<insert id="insertCategory" parameterType="string">
+		INSERT INTO CATEGORY (category_name)
+		VALUES (#{categoryName})
+	</insert>
+	<update id="updateCategory" parameterType="map">
+		UPDATE CATEGORY
+		SET category_name = #{categoryName}
+		WHERE category_id = #{categoryId}
+	</update>
+	<delete id="deleteCategory" parameterType="long">
+		DELETE FROM CATEGORY
+		WHERE category_id = #{categoryId}
+	</delete>
 </mapper>

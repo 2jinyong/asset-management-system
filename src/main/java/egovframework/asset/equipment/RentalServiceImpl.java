@@ -31,6 +31,7 @@ public class RentalServiceImpl implements RentalService {
             throw new IllegalStateException("재고가 부족합니다. 현재 대여 가능 수량: " + availableIds.size());
         }
 
+        // 승인 전까지는 비품 상태를 바꾸지 않는다 (관리자 승인 시점에 RENTED 로 전환).
         for (Long equipmentId : availableIds) {
             RentalVO row = new RentalVO();
             row.setEquipmentId(equipmentId);
@@ -40,24 +41,20 @@ public class RentalServiceImpl implements RentalService {
             row.setReturnDate(rentalVO.getReturnDate());
 
             rentalMapper.insertRental(row);
-
-            Map<String, Object> statusParams = new HashMap<>();
-            statusParams.put("equipmentId", equipmentId);
-            statusParams.put("status", "RENTED");
-            rentalMapper.updateEquipmentStatus(statusParams);
         }
     }
 
     @Override
-    public void extendRental(Long rentalId, Long userId, String newReturnDate) {
+    public void requestExtend(Long rentalId, Long userId, String newReturnDate, String reason) {
         Map<String, Object> params = new HashMap<>();
         params.put("rentalId", rentalId);
         params.put("userId", userId);
         params.put("newReturnDate", newReturnDate);
+        params.put("reason", reason);
 
-        int updated = rentalMapper.updateReturnDate(params);
+        int updated = rentalMapper.requestExtend(params);
         if (updated == 0) {
-            throw new IllegalStateException("연장할 대여 건을 찾을 수 없습니다.");
+            throw new IllegalStateException("연장 요청할 대여 건을 찾을 수 없습니다.");
         }
     }
 
@@ -78,5 +75,47 @@ public class RentalServiceImpl implements RentalService {
         statusParams.put("equipmentId", equipmentId);
         statusParams.put("status", "AVAILABLE");
         rentalMapper.updateEquipmentStatus(statusParams);
+    }
+
+    @Override
+    public List<Map<String, Object>> getPendingRentals() {
+        return rentalMapper.selectPendingRentals();
+    }
+
+    @Override
+    public void approveRental(Long rentalId) {
+        int updated = rentalMapper.approveRental(rentalId);
+        if (updated == 0) {
+            throw new IllegalStateException("승인할 대여 요청을 찾을 수 없습니다.");
+        }
+    }
+
+    @Override
+    public void rejectRental(Long rentalId) {
+        int updated = rentalMapper.rejectRental(rentalId);
+        if (updated == 0) {
+            throw new IllegalStateException("반려할 대여 요청을 찾을 수 없습니다.");
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> getPendingExtends() {
+        return rentalMapper.selectPendingExtends();
+    }
+
+    @Override
+    public void approveExtend(Long rentalId) {
+        int updated = rentalMapper.approveExtend(rentalId);
+        if (updated == 0) {
+            throw new IllegalStateException("승인할 연장 요청을 찾을 수 없습니다.");
+        }
+    }
+
+    @Override
+    public void rejectExtend(Long rentalId) {
+        int updated = rentalMapper.rejectExtend(rentalId);
+        if (updated == 0) {
+            throw new IllegalStateException("반려할 연장 요청을 찾을 수 없습니다.");
+        }
     }
 }

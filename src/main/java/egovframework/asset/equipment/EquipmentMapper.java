@@ -17,4 +17,18 @@ public interface EquipmentMapper {
 
     // 추가: 특정 모델명의 AVAILABLE 비품 중 quantity개 equipment_id 조회
     List<Long> selectAvailableEquipmentIdsByName(Map<String, Object> params);
+
+    // 비품 등록/수정/삭제 (관리자 전용)
+    EquipmentVO selectEquipmentById(Long equipmentId);
+    int insertEquipment(EquipmentVO equipmentVO);
+    int updateEquipment(EquipmentVO equipmentVO);
+    int deleteEquipment(Long equipmentId);
+
+    // 카테고리 마스터 (관리자 전용)
+    List<String> selectAllCategoryNames();
+    List<Map<String, Object>> selectAllCategories(Map<String, Object> params);
+    int selectCategoryCount();
+    int insertCategory(String categoryName);
+    int updateCategory(Map<String, Object> params);
+    int deleteCategory(Long categoryId);
 }

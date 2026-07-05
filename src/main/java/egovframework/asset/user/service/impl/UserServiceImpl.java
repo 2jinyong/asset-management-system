@@ -26,6 +26,7 @@ import java.util.List;
 import javax.annotation.Resource;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import egovframework.asset.user.service.UserMapper;
@@ -40,9 +41,12 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
     @Resource(name = "userMapper")
     private UserMapper userMapper;
 
+    // 비밀번호 암호화/검증용 인코더 (해시마다 랜덤 salt가 섞여 들어감)
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     /**
      * [회원가입 처리]
-     * 1. 이미 가입 신청했거나(승인대기 'P') 이미 활성('Y')인 이메일인지 먼저 확인
+     * 1. 이미 가입 신청했거나(승인대기 'P') 이미 활성('Y')인 이메일/사원번호인지 먼저 확인
      * 2. 없으면 기본값(권한, 사용여부) 설정 후 DB에 저장 - 승인대기('P') 상태로 저장
      *    관리자가 승인해야 use_yn='Y' 로 바뀌어 로그인이 가능해짐
      */
@@ -57,10 +61,19 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
             return 0; // 이미 가입 신청했거나 활성 상태인 이메일 → 0 반환 (컨트롤러에서 에러 처리)
         }
 
+        // Step 1-1: 사원번호 중복 체크 (이메일과 동일한 기준: 승인대기/활성 상태만 중복으로 취급)
+        UserVO existingEmployee = userMapper.selectUserByEmployeeNumberAny(userVO.getEmployeeNumber());
+        if (existingEmployee != null) {
+            return 2; // 이미 사용 중인 사원번호 → 2 반환 (컨트롤러에서 에러 처리)
+        }
+
         // Step 2: 기본값 설정
         // 회원가입 시 권한은 일반 사용자("USER"), 사용 여부는 승인대기("P") 로 고정
         userVO.setRole("USER");
         userVO.setUseYn("P");
+
+        // 비밀번호는 평문을 저장하지 않고 BCrypt로 해시한 값을 저장
+        userVO.setPassword(passwordEncoder.encode(userVO.getPassword()));
 
         // Step 3: DB에 INSERT 실행
         // userMapper.insertUser() 호출 → UserMapper.xml 의 <insert id="insertUser"> 실행
@@ -70,13 +83,8 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
     /**
      * [로그인 처리]
      * 1. 이메일로 DB에서 사용자 조회
-     * 2. 비밀번호 일치 여부 확인
+     * 2. 비밀번호 일치 여부 확인 (BCrypt 해시 비교)
      * 3. 일치하면 사용자 정보 반환, 불일치하면 null 반환
-     *
-     * ⚠ 실무 주의사항:
-     *   비밀번호는 반드시 암호화(BCrypt 등)해서 저장/비교해야 합니다.
-     *   현재는 학습 목적으로 평문 비교를 사용하지만,
-     *   실제 서비스에서는 Spring Security의 BCryptPasswordEncoder를 사용하세요.
      */
     @Override
     public UserVO login(UserVO userVO) {
@@ -88,7 +96,7 @@ public class UserServiceImpl extends EgovAbstractServiceImpl implements UserServ
         if (findUser == null) {
             return null; // 해당 이메일 없음
         }
-        if (!findUser.getPassword().equals(userVO.getPassword())) {
+        if (!passwordEncoder.matches(userVO.getPassword(), findUser.getPassword())) {
             return null; // 비밀번호 불일치
         }
 

@@ -44,6 +44,7 @@
   .pagination a { display: inline-block; padding: 7px 13px; border-radius: 7px; border: 1px solid #e0e0e0; background: #fff; color: #444; text-decoration: none; font-size: 14px; }
   .pagination a:hover { background: #f0f4ff; border-color: #b0c4ff; }
   .pagination a.active { background: #2d5be3; color: #fff; border-color: #2d5be3; }
+  form.inline { display: inline; }
 </style>
 </head>
 <body>
@@ -94,8 +95,16 @@
           <td><span class="badge pending">승인 대기</span></td>
           <td>
             <div class="btn-group">
-              <button type="button" class="btn btn-approve" onclick="alert('승인 처리는 추후 연동 예정입니다.')">승인</button>
-              <button type="button" class="btn btn-reject" onclick="alert('반려 처리는 추후 연동 예정입니다.')">반려</button>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/approveRental.do"
+                    onsubmit="return confirm('대여 요청을 승인하시겠습니까?');">
+                <input type="hidden" name="rentalId" value="${item.rentalId}">
+                <button type="submit" class="btn btn-approve">승인</button>
+              </form>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/rejectRental.do"
+                    onsubmit="return confirm('대여 요청을 반려하시겠습니까?');">
+                <input type="hidden" name="rentalId" value="${item.rentalId}">
+                <button type="submit" class="btn btn-reject">반려</button>
+              </form>
             </div>
           </td>
         </tr>
@@ -125,8 +134,16 @@
           <td>${item.reason}</td>
           <td>
             <div class="btn-group">
-              <button type="button" class="btn btn-approve" onclick="alert('승인 처리는 추후 연동 예정입니다.')">승인</button>
-              <button type="button" class="btn btn-reject" onclick="alert('반려 처리는 추후 연동 예정입니다.')">반려</button>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/approveExtend.do"
+                    onsubmit="return confirm('연장 요청을 승인하시겠습니까?');">
+                <input type="hidden" name="rentalId" value="${item.rentalId}">
+                <button type="submit" class="btn btn-approve">승인</button>
+              </form>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/rejectExtend.do"
+                    onsubmit="return confirm('연장 요청을 반려하시겠습니까?');">
+                <input type="hidden" name="rentalId" value="${item.rentalId}">
+                <button type="submit" class="btn btn-reject">반려</button>
+              </form>
             </div>
           </td>
         </tr>
@@ -156,8 +173,16 @@
           <td><div class="thumb"></div></td>
           <td>
             <div class="btn-group">
-              <button type="button" class="btn btn-confirm" onclick="alert('확인 처리는 추후 연동 예정입니다.')">확인</button>
-              <button type="button" class="btn btn-resolve" onclick="alert('수리 완료 처리는 추후 연동 예정입니다.')">수리 완료</button>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/approveReport.do"
+                    onsubmit="return confirm('신고를 승인하시겠습니까? 비품이 고장(BROKEN) 처리되고 대여 건이 종료됩니다.');">
+                <input type="hidden" name="reportId" value="${item.reportId}">
+                <button type="submit" class="btn btn-resolve">승인</button>
+              </form>
+              <form class="inline" method="post" action="<%=request.getContextPath()%>/rejectReport.do"
+                    onsubmit="return confirm('신고를 반려하시겠습니까?');">
+                <input type="hidden" name="reportId" value="${item.reportId}">
+                <button type="submit" class="btn btn-reject">반려</button>
+              </form>
             </div>
           </td>
         </tr>
