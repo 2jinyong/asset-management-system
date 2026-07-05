@@ -16,12 +16,6 @@
         SET status = #{status}, updated_at = NOW()
         WHERE equipment_id = #{equipmentId}
     </update>
-    <update id="updateReturnDate" parameterType="map">
-        UPDATE RENTAL
-        SET return_date = #{newReturnDate}
-        WHERE rental_id = #{rentalId}
-        AND user_id = #{userId}
-    </update>
     <select id="selectRentalByEquipmentId" parameterType="long" resultType="map">
         SELECT
             r.rental_id AS rentalId,
@@ -34,9 +28,75 @@
         JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
         JOIN users u ON r.user_id = u.user_id
         WHERE r.equipment_id = #{equipmentId}
+        AND r.request_status = 'APPROVED'
+        ORDER BY r.rental_id DESC
+        LIMIT 1
     </select>
     <delete id="deleteRental" parameterType="long">
         DELETE FROM RENTAL
         WHERE rental_id = #{rentalId}
     </delete>
+
+    <!-- 대여 요청 승인 관리 -->
+    <select id="selectPendingRentals" resultType="map">
+        SELECT
+            r.rental_id AS rentalId,
+            u.user_name AS applicant,
+            e.equipment_name AS itemName,
+            r.rental_date AS startDate,
+            r.return_date AS dueDate
+        FROM RENTAL r
+        JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
+        JOIN users u ON r.user_id = u.user_id
+        WHERE r.request_status = 'REQUESTED'
+        ORDER BY r.rental_id ASC
+    </select>
+    <update id="approveRental" parameterType="long">
+        UPDATE RENTAL r
+        JOIN EQUIPMENT e ON e.equipment_id = r.equipment_id
+        SET r.request_status = 'APPROVED',
+            e.status = 'RENTED',
+            e.updated_at = NOW()
+        WHERE r.rental_id = #{rentalId}
+    </update>
+    <update id="rejectRental" parameterType="long">
+        UPDATE RENTAL
+        SET request_status = 'REJECTED'
+        WHERE rental_id = #{rentalId}
+    </update>
+
+    <!-- 연장 요청 승인 관리 -->
+    <update id="requestExtend" parameterType="map">
+        UPDATE RENTAL
+        SET extend_status = 'REQUESTED',
+            requested_return_date = #{newReturnDate},
+            extend_reason = #{reason}
+        WHERE rental_id = #{rentalId}
+        AND user_id = #{userId}
+    </update>
+    <select id="selectPendingExtends" resultType="map">
+        SELECT
+            r.rental_id AS rentalId,
+            u.user_name AS applicant,
+            e.equipment_name AS itemName,
+            r.return_date AS currentDue,
+            r.requested_return_date AS requestDue,
+            r.extend_reason AS reason
+        FROM RENTAL r
+        JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
+        JOIN users u ON r.user_id = u.user_id
+        WHERE r.extend_status = 'REQUESTED'
+        ORDER BY r.rental_id ASC
+    </select>
+    <update id="approveExtend" parameterType="long">
+        UPDATE RENTAL
+        SET return_date = requested_return_date,
+            extend_status = 'APPROVED'
+        WHERE rental_id = #{rentalId}
+    </update>
+    <update id="rejectExtend" parameterType="long">
+        UPDATE RENTAL
+        SET extend_status = 'REJECTED'
+        WHERE rental_id = #{rentalId}
+    </update>
 </mapper>

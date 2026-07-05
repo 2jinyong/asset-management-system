@@ -64,6 +64,20 @@
             <mvc:mapping path="/user/approve.do"/>
             <mvc:mapping path="/user/reject.do"/>
             <mvc:mapping path="/approveList.do"/>
+            <mvc:mapping path="/approveRental.do"/>
+            <mvc:mapping path="/rejectRental.do"/>
+            <mvc:mapping path="/approveExtend.do"/>
+            <mvc:mapping path="/rejectExtend.do"/>
+            <mvc:mapping path="/approveReport.do"/>
+            <mvc:mapping path="/rejectReport.do"/>
+            <mvc:mapping path="/equipmentForm.do"/>
+            <mvc:mapping path="/equipmentRegister.do"/>
+            <mvc:mapping path="/equipmentUpdate.do"/>
+            <mvc:mapping path="/equipmentDelete.do"/>
+            <mvc:mapping path="/categoryList.do"/>
+            <mvc:mapping path="/categoryRegister.do"/>
+            <mvc:mapping path="/categoryUpdate.do"/>
+            <mvc:mapping path="/categoryDelete.do"/>
             <bean class="egovframework.asset.cmmn.AdminCheckInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>

@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -11,6 +12,10 @@
   .header .logo { font-size: 17px; font-weight: bold; color: #2d5be3; text-decoration: none; }
   .header .user-info { font-size: 13px; color: #666; display: flex; align-items: center; gap: 8px; }
   .avatar { width: 32px; height: 32px; border-radius: 50%; background: #dce8ff; color: #2d5be3; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; }
+  .btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
+  .btn-logout { background: #f0f0f0; color: #555; }
+  .btn-withdraw { background: #fff0f0; color: #c0392b; }
+  form.inline { display: inline; }
   .container { max-width: 960px; margin: 32px auto; padding: 0 24px; }
   .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
   .back-btn { font-size: 13px; color: #2d5be3; text-decoration: none; }
@@ -35,7 +40,19 @@
 <body>
 <div class="header">
   <a href="main.do" class="logo">&#128230; 사내 비품 관리 시스템</a>
-  <div class="user-info"><div class="avatar">김</div><span>김재민 님</span></div>
+  <div class="user-info">
+    <c:if test="${sessionScope.loginUser.role == 'USER'}">
+      <div class="avatar">사원</div>
+    </c:if>
+    <span>${sessionScope.loginUser.userName}</span>
+    <a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
+    <c:if test="${sessionScope.loginUser.role == 'USER'}">
+      <form class="inline" method="post" action="<%=request.getContextPath()%>/user/withdraw.do"
+            onsubmit="return confirm('정말 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없습니다.');">
+        <button type="submit" class="btn btn-withdraw">회원 탈퇴</button>
+      </form>
+    </c:if>
+  </div>
 </div>
 <div class="container">
   <div class="page-header">
@@ -61,7 +78,7 @@
     </div>
     <div class="form-group">
       <label>연장 사유</label>
-      <textarea placeholder="연장이 필요한 사유를 입력하세요"></textarea>
+      <textarea id="reasonInput" placeholder="연장이 필요한 사유를 입력하세요"></textarea>
     </div>
     <button class="btn-submit" onclick="submitExtend()">연장 요청 제출</button>
   </div>
@@ -116,6 +133,7 @@ function showCurrent() {
 function submitExtend() {
   const idx = document.getElementById('rentalSelect').value;
   const newDate = document.getElementById('newDate').value;
+  const reason = document.getElementById('reasonInput').value;
 
   if (idx === '') { alert('비품을 선택하세요.'); return; }
   if (!newDate) { alert('연장 반납 예정일을 선택하세요.'); return; }
@@ -125,11 +143,13 @@ function submitExtend() {
   fetch('extendRequest.do', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'rentalId=' + encodeURIComponent(r.rentalId) + '&newReturnDate=' + encodeURIComponent(newDate)
+    body: 'rentalId=' + encodeURIComponent(r.rentalId)
+      + '&newReturnDate=' + encodeURIComponent(newDate)
+      + '&reason=' + encodeURIComponent(reason)
   })
     .then(res => res.text())
     .then(() => {
-      alert('연장 요청이 완료되었습니다.');
+      alert('연장 요청이 접수되었습니다. 관리자 승인 후 반납 예정일이 변경됩니다.');
       location.href = 'main.do';
     })
     .catch(err => {

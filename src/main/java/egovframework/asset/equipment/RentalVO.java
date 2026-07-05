@@ -11,6 +11,8 @@ public class RentalVO {
 	private String returnDate;
 	private String actualReturnDate;
 	private String extendStatus;
+	private String requestedReturnDate;
+	private String extendReason;
 	// Getter / Setter
 	public Long getRentalId() {
 		return rentalId;
@@ -77,5 +79,17 @@ public class RentalVO {
 	}
 	public void setExtendStatus(String extendStatus) {
 		this.extendStatus = extendStatus;
+	}
+	public String getRequestedReturnDate() {
+		return requestedReturnDate;
+	}
+	public void setRequestedReturnDate(String requestedReturnDate) {
+		this.requestedReturnDate = requestedReturnDate;
+	}
+	public String getExtendReason() {
+		return extendReason;
+	}
+	public void setExtendReason(String extendReason) {
+		this.extendReason = extendReason;
 	}
 }

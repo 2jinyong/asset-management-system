@@ -264,6 +264,10 @@ form.inline {
 						class="icon">🧑‍💼</span> <span class="menu-title">가입 승인</span> <span
 						class="menu-desc">신규 가입 신청 승인/반려</span>
 					</a>
+					<a href="equipmentList.do" class="menu-card">
+						<span class="menu-title">비품 관리</span>
+						<span class="menu-desc">비품 등록/수정/삭제</span>
+					</a>
 				</c:when>
 				<c:otherwise>
 					<a href="rentalRequest.do" class="menu-card"> <span class="icon">📋</span>
@@ -309,7 +313,8 @@ form.inline {
 			</tbody>
 		</table>
 
-		<!-- 내 대여 현황 -->
+		<!-- 내 대여 현황 (관리자는 대여를 하지 않으므로 USER에게만 노출) -->
+		<c:if test="${sessionScope.loginUser.role == 'USER'}">
 		<p class="section-title">내 대여 현황</p>
 		<table class="rental-table">
 			<thead>
@@ -362,6 +367,7 @@ form.inline {
 				</c:choose>
 			</tbody>
 		</table>
+		</c:if>
 
 	</div>
 </body>

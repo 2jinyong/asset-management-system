@@ -4,9 +4,46 @@
 <mapper namespace="egovframework.asset.equipment.ReportMapper">
     <insert id="insertReport" parameterType="egovframework.asset.equipment.ReportVO">
         INSERT INTO REPORT (
-            equipment_id, user_id, issue_type, content, image_path, status, created_at
+            equipment_id, user_id, issue_type, content, image_path, rental_id, status, created_at
         ) VALUES (
-            #{equipmentId}, #{userId}, #{issueType}, #{content}, #{imagePath}, 'PENDING', NOW()
+            #{equipmentId}, #{userId}, #{issueType}, #{content}, #{imagePath}, #{rentalId}, 'PENDING', NOW()
         )
     </insert>
+
+    <select id="selectPendingReports" resultType="map">
+        SELECT
+            rp.report_id AS reportId,
+            u.user_name AS applicant,
+            e.equipment_name AS itemName,
+            rp.issue_type AS issueType,
+            rp.content AS content,
+            rp.image_path AS imagePath
+        FROM REPORT rp
+        JOIN EQUIPMENT e ON rp.equipment_id = e.equipment_id
+        JOIN users u ON rp.user_id = u.user_id
+        WHERE rp.status = 'PENDING'
+        ORDER BY rp.report_id ASC
+    </select>
+
+    <select id="selectReportById" parameterType="long" resultType="map">
+        SELECT
+            report_id AS reportId,
+            equipment_id AS equipmentId,
+            rental_id AS rentalId,
+            status AS status
+        FROM REPORT
+        WHERE report_id = #{reportId}
+    </select>
+
+    <update id="approveReport" parameterType="long">
+        UPDATE REPORT
+        SET status = 'APPROVED'
+        WHERE report_id = #{reportId}
+    </update>
+
+    <update id="rejectReport" parameterType="long">
+        UPDATE REPORT
+        SET status = 'REJECTED'
+        WHERE report_id = #{reportId}
+    </update>
 </mapper>
