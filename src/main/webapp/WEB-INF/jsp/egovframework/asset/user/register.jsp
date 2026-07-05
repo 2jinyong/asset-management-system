@@ -202,6 +202,18 @@ body {
 
 <script>
 	$(function () {
+	    // [서버 검증 실패로 되돌아온 경우, 원인 필드를 강조해서 알려줌]
+	    // (이메일/사원번호 중복은 서버에서만 판별 가능하므로 폼 재제출 후 errorMsg로 표시됨)
+	    var errorMsg = "<c:out value='${errorMsg}' />";
+	    if (errorMsg.indexOf('사원번호') !== -1) {
+	        $('#employeeNumber').addClass('is-invalid').focus();
+	    } else if (errorMsg.indexOf('이메일') !== -1) {
+	        $('#email').addClass('is-invalid').focus();
+	    }
+	    $('#employeeNumber, #email').on('input', function () {
+	        $(this).removeClass('is-invalid');
+	    });
+
 	    // [비밀번호 확인 일치 여부 실시간 검증]
 	    $('#passwordConfirm').on('input', function () {
 	        const pw  = $('#password').val();

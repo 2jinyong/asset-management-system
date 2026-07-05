@@ -479,14 +479,14 @@ JSP 쪽 핵심 한 줄 (`EquipmentList.jsp`):
    지금은 단순 INSERT/UPDATE 한 번짜리 로직이라 문제가 드러나지 않지만, "여러 테이블에 걸친
    작업"(예: 대여 처리 시 EQUIPMENT 상태 변경 + RENTAL 기록 INSERT를 함께)이 생기면 반드시 고쳐야 한다.
 
-2. **비밀번호 평문 저장/비교** — `UserServiceImpl.login()`이 `equals()`로 직접 비교한다.
-   실무라면 `BCryptPasswordEncoder`로 암호화 저장 + 비교해야 한다. (학습 단계라 의도적으로 단순화됨)
+2. ~~비밀번호 평문 저장/비교~~ — `BCryptPasswordEncoder`로 암호화 저장 + 비교하도록 수정 완료
+   (`UserServiceImpl.insertUser()`/`login()`).
 
 3. **`/approveList.do`는 더미 데이터** — 14장 참고. RENTAL 테이블 설계 전까지 임시.
 
-4. **`employee_number`가 `UserVO`에선 `@NotBlank`(필수)인데 DB 스키마에선 `NULL` 허용** —
-   회원가입 폼에서는 필수로 강제하고 있어서 실질적 문제는 없지만, 스키마와 검증 규칙이 어긋나 있다는
-   점은 인지해두면 좋다.
+4. ~~`employee_number` 중복 미검증~~ — 이메일과 동일한 방식(승인대기/활성 상태만 중복 취급)으로
+   `UserServiceImpl.insertUser()`에서 사원번호 중복 체크 추가 완료. DB 스키마에는 `NULL` 허용으로
+   남아있고(앱단에서만 검증), `@NotBlank`로 폼에서는 필수 강제 중.
 
 ---
 

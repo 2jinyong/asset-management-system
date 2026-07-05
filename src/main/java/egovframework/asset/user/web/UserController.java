@@ -148,12 +148,15 @@ public class UserController {
             return "user/register";
         }
 
-        // 서비스 호출 (중복 이메일 체크 + DB 저장)
+        // 서비스 호출 (중복 이메일/사원번호 체크 + DB 저장)
         int result = userService.insertUser(userVO);
 
         if (result == 1) {
             model.addAttribute("userName", userVO.getUserName());
             return "user/joinResult";
+        } else if (result == 2) {
+            model.addAttribute("errorMsg", "이미 사용 중인 사원번호입니다. 다시 확인해주세요.");
+            return "user/register";
         } else {
             model.addAttribute("errorMsg", "이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.");
             return "user/register";
