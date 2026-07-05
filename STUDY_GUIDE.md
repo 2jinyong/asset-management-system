@@ -126,6 +126,15 @@ return "user/login"
   → /WEB-INF/jsp/egovframework/asset/user/login.jsp
 ```
 
+> **폴더 이름 참고**: JSP 폴더가 `user` / `equipment` / `admin` 세 개로 나뉘어 있다.
+> 원래는 `board`(게시판)라는 이름의 폴더 하나에 관리자 화면과 사용자 화면이 다 섞여 있었는데
+> — eGovFrame 샘플 프로젝트가 원래 "게시판" 예제를 기본으로 제공하고, 그 폴더명을 그대로 재활용해서
+> 비품/승인 화면들을 넣다 보니 실제 내용과 안 맞는 이름이 됐던 것. 지금은 실제 도메인 기준으로
+> `user`(로그인/회원가입), `equipment`(비품 조회·대여·반납 등 사용자 self-service), `admin`(role=ADMIN
+> 전용 관리 화면, 도메인 무관하게 전부 여기로) 세 폴더로 정리했다. **컨트롤러가 `return`하는
+> 문자열과 실제 JSP 폴더 위치가 항상 1:1로 맞아야 한다**는 걸 보여주는 좋은 예 — 폴더를 옮기면
+> 그 폴더를 참조하는 모든 `return "/xxx/Yyy"` 문자열도 같이 고쳐야 한다.
+
 ---
 
 ## 5. AOP — 예외 처리를 한 곳에 몰아넣는 이유
@@ -396,7 +405,7 @@ POST /user/withdraw.do
 GET  /user/pendingList.do
   (LoginCheckInterceptor → AdminCheckInterceptor 통과해야 컨트롤러 도달, ADMIN 아니면 /main.do 로 튕겨냄)
   userService.getPendingUserList() → use_yn='P' 목록, 신청일 오름차순
-  → /board/ApproveUserList.jsp
+  → /admin/ApproveUserList.jsp
 
 ApproveUserList.jsp:
   각 행마다 승인/반려 버튼 → 별도 <form> 으로 즉시 POST
@@ -421,7 +430,7 @@ GET /main.do
   EquipmentController.mainPage()
     equipmentService.getCategorySummary()
       → SQL: category별 GROUP BY, 전체/대여가능/대여중/신고 건수 집계
-    → /board/TestUI.jsp (대시보드, 카테고리별 카드)
+    → /equipment/TestUI.jsp (대시보드, 카테고리별 카드)
 
 GET /equipmentList.do?category=노트북&page=2
   EquipmentController.equipmentList()
@@ -431,7 +440,7 @@ GET /equipmentList.do?category=노트북&page=2
          → SQL: WHERE category=? ORDER BY equipment_id LIMIT 15 OFFSET 15
     4. equipmentService.getEquipmentCount(params) → 전체 건수 (페이지 계산용)
     5. PageMaker.setTotalCount() → 시작페이지/끝페이지/이전유무/다음유무 자동 계산
-    → /board/EquipmentList.jsp
+    → /equipment/EquipmentList.jsp
 ```
 
 **페이징 계산 원리** (`PageMaker.calcData()`):
@@ -598,7 +607,7 @@ GET /approveList.do?type=rental
   EquipmentController.approveList()
     rentalService.getPendingRentals()
       → SELECT ... WHERE request_status = 'REQUESTED'   (신청자/비품명/대여일/반납예정일)
-  → /board/ApproveList.jsp (type=rental 인 경우 이 목록을 테이블로 렌더링)
+  → /admin/ApproveList.jsp (type=rental 인 경우 이 목록을 테이블로 렌더링)
 
 [승인/반려]
 POST /approveRental.do?rentalId=n

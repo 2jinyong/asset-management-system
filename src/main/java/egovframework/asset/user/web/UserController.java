@@ -219,7 +219,7 @@ public class UserController {
     @GetMapping("/pendingList.do")
     public String pendingList(Model model) {
         model.addAttribute("pendingUsers", userService.getPendingUserList());
-        return "/board/ApproveUserList";
+        return "/admin/ApproveUserList";
     }
 
     /**

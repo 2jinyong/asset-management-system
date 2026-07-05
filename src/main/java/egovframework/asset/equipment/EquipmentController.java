@@ -44,7 +44,7 @@ public class EquipmentController {
             List<Map<String, Object>> myRentalList = equipmentService.getMyRentalList(loginUser.getUserId());
             model.addAttribute("myRentalList", myRentalList);
         }
-        return "/board/TestUI";
+        return "/equipment/TestUI";
     }
 
     @RequestMapping("/equipmentList.do")
@@ -73,7 +73,7 @@ public class EquipmentController {
         model.addAttribute("pageMaker", pageMaker);
         model.addAttribute("category", category);
 
-        return "/board/EquipmentList";
+        return "/equipment/EquipmentList";
     }
 
     @RequestMapping(value = "/equipmentForm.do", method = RequestMethod.GET)
@@ -86,7 +86,7 @@ public class EquipmentController {
             model.addAttribute("equipmentVO", new EquipmentVO());
         }
         model.addAttribute("categoryList", equipmentService.getAllCategoryNames());
-        return "/board/EquipmentForm";
+        return "/admin/EquipmentForm";
     }
 
     @RequestMapping(value = "/categoryList.do", method = RequestMethod.GET)
@@ -113,7 +113,7 @@ public class EquipmentController {
         model.addAttribute("categories", categories);
         model.addAttribute("pageMaker", pageMaker);
         model.addAttribute("error", error);
-        return "/board/CategoryList";
+        return "/admin/CategoryList";
     }
 
     @PostMapping("/categoryRegister.do")
@@ -201,7 +201,7 @@ public class EquipmentController {
     @RequestMapping(value = "/rentalRequest.do", method = RequestMethod.GET)
     public String rentalRequestView(ModelMap model) {
         model.addAttribute("categoryList", equipmentService.getAllCategoryNames());
-        return "/board/RentalRequest";
+        return "/equipment/RentalRequest";
     }
 
     @RequestMapping(value = "/rentalRequest.do", method = RequestMethod.POST)
@@ -214,7 +214,7 @@ public class EquipmentController {
 
     @RequestMapping(value = "/returnQr.do", method = RequestMethod.GET)
     public String returnQr() {
-        return "/board/ReturnQr";
+        return "/equipment/ReturnQr";
     }
 
     @RequestMapping(value = "/returnSearch.do", method = RequestMethod.GET)
@@ -239,7 +239,7 @@ public class EquipmentController {
 
     @RequestMapping(value = "/extendRequest.do", method = RequestMethod.GET)
     public String extendRequestView() {
-        return "/board/ExtendRequest";
+        return "/equipment/ExtendRequest";
     }
 
     @RequestMapping(value = "/extendRequest.do", method = RequestMethod.POST)
@@ -256,7 +256,7 @@ public class EquipmentController {
 
     @RequestMapping(value = "/reportIssue.do", method = RequestMethod.GET)
     public String reportIssue() {
-        return "/board/ReportIssue";
+        return "/equipment/ReportIssue";
     }
 
     @RequestMapping(value = "/reportIssue.do", method = RequestMethod.POST)
@@ -323,7 +323,7 @@ public class EquipmentController {
         model.addAttribute("type", type);
         model.addAttribute("list", fullList.subList(from, to));
         model.addAttribute("pageMaker", pageMaker);
-        return "/board/ApproveList";
+        return "/admin/ApproveList";
     }
 
     @PostMapping("/approveRental.do")
