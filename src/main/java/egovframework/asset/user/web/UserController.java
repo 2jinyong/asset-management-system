@@ -190,6 +190,18 @@ public class UserController {
     }
 
     /**
+     * [내 정보]
+     * GET /user/myInfo.do → 로그인한 본인 정보 + 회원 탈퇴 버튼을 보여주는 화면
+     * 로그인 여부는 LoginCheckInterceptor 가 이미 검사했다.
+     */
+    @GetMapping("/myInfo.do")
+    public String myInfo(HttpSession session, Model model) {
+        UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+        model.addAttribute("loginUser", loginUser);
+        return "user/myInfo";
+    }
+
+    /**
      * [회원 탈퇴]
      * POST /user/withdraw.do → 본인 계정 use_yn='N' 처리 후 세션 삭제, 로그인 페이지로 이동
      * 로그인 여부는 LoginCheckInterceptor 가 이미 검사했다.

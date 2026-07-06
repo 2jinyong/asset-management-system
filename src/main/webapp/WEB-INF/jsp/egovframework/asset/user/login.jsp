@@ -144,15 +144,13 @@
     </div><%-- .login-card --%>
 </div><%-- .login-wrapper --%>
 
-<%-- jQuery --%>
-<script src="<c:url value='/js/jquery.min.js'/>"></script>
 <%-- Bootstrap JS (Popper.js 포함) --%>
 <script src="<c:url value='/css/egovframework/bootstrap/js/bootstrap.bundle.min.js'/>"></script>
 
 <script>
     // 페이지 로드 시 이메일 입력창에 자동 포커스
-    $(document).ready(function () {
-        $('#email').focus();
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('email').focus();
     });
 </script>
 
