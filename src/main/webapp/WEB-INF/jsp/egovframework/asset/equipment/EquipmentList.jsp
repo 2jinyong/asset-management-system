@@ -73,9 +73,9 @@ body {
 	color: #555;
 }
 
-.btn-withdraw {
-	background: #fff0f0;
-	color: #c0392b;
+.btn-mypage {
+	background: #eef3ff;
+	color: #2d5be3;
 }
 
 form.inline {
@@ -250,14 +250,8 @@ form.inline {
 				<div class="avatar">사원</div>
 			</c:if>
 			<span>${sessionScope.loginUser.userName}</span>
+			<a href="<%=request.getContextPath()%>/user/myInfo.do" class="btn btn-mypage">내 정보</a>
 			<a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
-			<c:if test="${sessionScope.loginUser.role == 'USER'}">
-				<form class="inline" method="post"
-					action="<%=request.getContextPath()%>/user/withdraw.do"
-					onsubmit="return confirm('정말 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없습니다.');">
-					<button type="submit" class="btn btn-withdraw">회원 탈퇴</button>
-				</form>
-			</c:if>
 		</div>
 	</div>
 

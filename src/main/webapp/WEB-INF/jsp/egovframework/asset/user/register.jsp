@@ -196,79 +196,90 @@ body {
 		</div>
 	</div>
 
-	<script src="<c:url value='/js/jquery.min.js'/>"></script>
 	<script
 		src="<c:url value='/css/egovframework/bootstrap/js/bootstrap.bundle.min.js'/>"></script>
 
 <script>
-	$(function () {
+	document.addEventListener('DOMContentLoaded', function () {
+	    var employeeNumberInput = document.getElementById('employeeNumber');
+	    var emailInput = document.getElementById('email');
+	    var passwordInput = document.getElementById('password');
+	    var passwordConfirmInput = document.getElementById('passwordConfirm');
+	    var pwMatchMsg = document.getElementById('pwMatchMsg');
+
 	    // [서버 검증 실패로 되돌아온 경우, 원인 필드를 강조해서 알려줌]
 	    // (이메일/사원번호 중복은 서버에서만 판별 가능하므로 폼 재제출 후 errorMsg로 표시됨)
 	    var errorMsg = "<c:out value='${errorMsg}' />";
 	    if (errorMsg.indexOf('사원번호') !== -1) {
-	        $('#employeeNumber').addClass('is-invalid').focus();
+	        employeeNumberInput.classList.add('is-invalid');
+	        employeeNumberInput.focus();
 	    } else if (errorMsg.indexOf('이메일') !== -1) {
-	        $('#email').addClass('is-invalid').focus();
+	        emailInput.classList.add('is-invalid');
+	        emailInput.focus();
 	    }
-	    $('#employeeNumber, #email').on('input', function () {
-	        $(this).removeClass('is-invalid');
+	    [employeeNumberInput, emailInput].forEach(function (input) {
+	        input.addEventListener('input', function () {
+	            input.classList.remove('is-invalid');
+	        });
 	    });
 
 	    // [비밀번호 확인 일치 여부 실시간 검증]
-	    $('#passwordConfirm').on('input', function () {
-	        const pw  = $('#password').val();
-	        const pwc = $(this).val();
-	        const $msg = $('#pwMatchMsg');
-	
+	    passwordConfirmInput.addEventListener('input', function () {
+	        const pw  = passwordInput.value;
+	        const pwc = passwordConfirmInput.value;
+
+	        pwMatchMsg.classList.remove('text-success', 'text-danger');
 	        if (pwc === '') {
-	            $msg.text('').removeClass('text-success text-danger');
+	            pwMatchMsg.textContent = '';
 	        } else if (pw === pwc) {
-	            $msg.text('비밀번호가 일치합니다 ✔').removeClass('text-danger').addClass('text-success');
+	            pwMatchMsg.textContent = '비밀번호가 일치합니다 ✔';
+	            pwMatchMsg.classList.add('text-success');
 	        } else {
-	            $msg.text('비밀번호가 일치하지 않습니다').removeClass('text-success').addClass('text-danger');
+	            pwMatchMsg.textContent = '비밀번호가 일치하지 않습니다';
+	            pwMatchMsg.classList.add('text-danger');
 	        }
 	    });
-	
+
 	    // [폼 제출 전 유효성 검사]
-	    $('#registerForm').on('submit', function (e) {
-	        const userName  = $('#userName').val().trim();
-	        const email     = $('#email').val().trim();
-	        const password  = $('#password').val();
-	        const pwConfirm = $('#passwordConfirm').val();
-	        const employee  = $('#employeeNumber').val().trim(); // 오타 수정 및 trim 추가
-	        
+	    document.getElementById('registerForm').addEventListener('submit', function (e) {
+	        const userName  = document.getElementById('userName').value.trim();
+	        const email     = emailInput.value.trim();
+	        const password  = passwordInput.value;
+	        const pwConfirm = passwordConfirmInput.value;
+	        const employee  = employeeNumberInput.value.trim();
+
 	        if (userName.length === 0) {
 	            alert('이름을 입력해주세요.');
-	            $('#userName').focus();
+	            document.getElementById('userName').focus();
 	            e.preventDefault();
 	            return;
 	        }
-	        
+
 	        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 	        if (!emailRegex.test(email)) {
 	            alert('올바른 이메일 형식을 입력해주세요.');
-	            $('#email').focus();
+	            emailInput.focus();
 	            e.preventDefault();
 	            return;
 	        }
-	        
+
 	        if (password.length === 0) {
 	            alert('비밀번호를 입력해주세요.');
-	            $('#password').focus();
+	            passwordInput.focus();
 	            e.preventDefault();
 	            return;
 	        }
-	        
+
 	        if (password !== pwConfirm) {
 	            alert('비밀번호가 일치하지 않습니다.');
-	            $('#passwordConfirm').focus();
+	            passwordConfirmInput.focus();
 	            e.preventDefault();
 	            return;
 	        }
-	        
+
 	        if (employee.length === 0) {
 	            alert('사원번호를 입력해주세요.');
-	            $('#employeeNumber').focus();
+	            employeeNumberInput.focus();
 	            e.preventDefault();
 	            return;
 	        }

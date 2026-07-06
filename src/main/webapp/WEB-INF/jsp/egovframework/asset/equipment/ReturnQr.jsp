@@ -14,8 +14,7 @@
   .avatar { width: 32px; height: 32px; border-radius: 50%; background: #dce8ff; color: #2d5be3; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; }
   .btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
   .btn-logout { background: #f0f0f0; color: #555; }
-  .btn-withdraw { background: #fff0f0; color: #c0392b; }
-  form.inline { display: inline; }
+  .btn-mypage { background: #eef3ff; color: #2d5be3; }
   .container { max-width: 960px; margin: 32px auto; padding: 0 24px; }
   .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
   .back-btn { font-size: 13px; color: #2d5be3; text-decoration: none; }
@@ -52,13 +51,8 @@
       <div class="avatar">사원</div>
     </c:if>
     <span>${sessionScope.loginUser.userName}</span>
+    <a href="<%=request.getContextPath()%>/user/myInfo.do" class="btn btn-mypage">내 정보</a>
     <a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
-    <c:if test="${sessionScope.loginUser.role == 'USER'}">
-      <form class="inline" method="post" action="<%=request.getContextPath()%>/user/withdraw.do"
-            onsubmit="return confirm('정말 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없습니다.');">
-        <button type="submit" class="btn btn-withdraw">회원 탈퇴</button>
-      </form>
-    </c:if>
   </div>
 </div>
 <div class="container">

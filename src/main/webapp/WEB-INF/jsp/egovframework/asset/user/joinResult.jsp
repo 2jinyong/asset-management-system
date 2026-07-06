@@ -64,7 +64,6 @@
     </div>
 </div>
 
-<script src="<c:url value='/js/jquery.min.js'/>"></script>
 <script src="<c:url value='/css/egovframework/bootstrap/js/bootstrap.bundle.min.js'/>"></script>
 </body>
 </html>
