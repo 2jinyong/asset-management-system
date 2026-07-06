@@ -1,8 +1,8 @@
 # 사내 비품관리시스템 — 프로젝트 이해 가이드
 
 > **목적**: 이 프로젝트가 "왜 이런 구조로 짜여 있는지"와 "무엇이 무엇을 부르는지"를 잡아주는 것.
-> 세세한 동작은 각 파일의 한글 주석에서 확인하고, 이 문서는 파일들 사이의 연결고리와
-> 설계 판단의 이유에 집중한다. 목차를 인덱스처럼 쓰고, 막히는 부분만 찾아서 읽을 것.
+> 각 장 맨 앞에 **📂 볼 파일**을 달아뒀다 — 읽기 전에 그 파일을 먼저 열어놓고, 설명과 코드를
+> 대조해가며 읽을 것. 경로는 전부 프로젝트 루트(`asset-management-system/`) 기준 상대경로다.
 
 ---
 
@@ -34,6 +34,10 @@
 
 ## 1. 전체 요청 흐름 한 장
 
+> 📂 **볼 파일**: `src/main/webapp/WEB-INF/web.xml` · `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml`
+> — 이 둘을 나란히 열어두고 아래 그림과 대조할 것. web.xml에서 필터 2개와 서블릿 등록을,
+> dispatcher-servlet.xml에서 인터셉터·뷰리졸버를 확인한다.
+
 ```
 브라우저
    │  GET/POST *.do
@@ -62,6 +66,11 @@
 
 ## 2. 왜 전자정부표준프레임워크(eGovFrame)인가
 
+> 📂 **볼 파일**: `src/main/resources/egovframework/spring/context-aspect.xml`(AOP 예외처리 설정) ·
+> `src/main/java/egovframework/asset/user/service/impl/UserServiceImpl.java`(클래스 선언부에서
+> `extends EgovAbstractServiceImpl` 확인) · `src/main/java/egovframework/asset/user/service/UserMapper.java`
+> (import 문에서 `org.egovframe.rte.psl.dataaccess.mapper.Mapper` 확인)
+
 **배경**: 공공기관 SW 사업은 매번 다른 업체가 수주해서 개발한다. 업체마다 쓰는 프레임워크가
 제각각이면, 나중에 다른 업체가 유지보수를 넘겨받았을 때 코드를 처음부터 다시 파악해야 하고
 (인수인계 비용), 처음 만든 업체에 계속 의존할 수밖에 없다(벤더 종속). 이 문제를 풀기 위해
@@ -85,18 +94,24 @@
 
 **이 프로젝트에서 실제로 "eGovFrame다운" 부분이 어디인지** — 순수 Spring과 비교하면 이렇다:
 
-| 항목 | 순수 Spring | eGovFrame |
-|---|---|---|
-| Mapper 어노테이션 | `org.apache.ibatis.annotations.Mapper` | `org.egovframe.rte.psl.dataaccess.mapper.Mapper` |
-| Mapper 등록 | `@MapperScan` | `MapperConfigurer` 빈 |
-| Service 부모클래스 | 없음 | `EgovAbstractServiceImpl` 상속 |
-| 예외 처리 | `@ControllerAdvice` 등 | AOP(`context-aspect.xml`)로 자동 처리 |
+| 항목 | 순수 Spring | eGovFrame | 이 프로젝트에서 확인할 파일 |
+|---|---|---|---|
+| Mapper 어노테이션 | `org.apache.ibatis.annotations.Mapper` | `org.egovframe.rte.psl.dataaccess.mapper.Mapper` | `.../user/service/UserMapper.java` 상단 import |
+| Mapper 등록 | `@MapperScan` | `MapperConfigurer` 빈 | `src/main/resources/egovframework/spring/context-mapper.xml` |
+| Service 부모클래스 | 없음 | `EgovAbstractServiceImpl` 상속 | `.../user/service/impl/UserServiceImpl.java` 클래스 선언부 |
+| 예외 처리 | `@ControllerAdvice` 등 | AOP(`context-aspect.xml`)로 자동 처리 | `src/main/resources/egovframework/spring/context-aspect.xml` |
 
 이름이 같은 `@Mapper`가 패키지만 다르게 두 종류 있으니 import 문에서 헷갈리지 말 것.
 
 ---
 
 ## 3. 계층 구조 규칙
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/web/UserController.java`(`@Controller`) ·
+> `src/main/java/egovframework/asset/user/service/UserService.java`(`@Service` 인터페이스) ·
+> `src/main/java/egovframework/asset/user/service/UserMapper.java`(`@Mapper` 인터페이스) —
+> 세 파일을 열어서 `UserController`가 `UserService`만 참조하고, `UserService`(구현체)가
+> `UserMapper`만 참조하는지 눈으로 확인해볼 것.
 
 | 어노테이션 | 계층 | 뜻 |
 |---|---|---|
@@ -110,6 +125,10 @@
 ---
 
 ## 4. 두 개의 Spring 컨텍스트
+
+> 📂 **볼 파일**: `src/main/webapp/WEB-INF/web.xml` — `<context-param>`(Root, `context-*.xml` 전체를
+> 가리킴)과 `<servlet>`의 `<init-param>`(Servlet, `dispatcher-servlet.xml` 하나만 가리킴) 두 군데를
+> 비교해서 볼 것. Root 쪽 실제 파일은 `src/main/resources/egovframework/spring/context-common.xml`.
 
 이 프로젝트는 컨텍스트가 **Root(부모) / Servlet(자식)** 둘로 나뉜다. 헷갈리면 여기로 돌아올 것.
 
@@ -131,36 +150,47 @@ Controller는 "웹 요청 처리 전용"이라 Servlet Context에 따로 둔다.
 
 ## 5. 설정 파일 지도
 
-| 파일 | 역할 |
-|---|---|
-| `web.xml` | Filter 등록, DispatcherServlet 등록 → 두 컨텍스트의 시작점 |
-| `dispatcher-servlet.xml` | `@Controller` 스캔, ViewResolver(뷰이름→JSP경로 변환), 인터셉터 |
-| `context-common.xml` | `@Service`/`@Mapper` 스캔(Controller 제외), 다국어 MessageSource |
-| `context-datasource.xml` | DB 커넥션 풀(BasicDataSource) |
-| `context-mapper.xml` | MyBatis SqlSessionFactory, `@Mapper` 스캔 |
-| `context-aspect.xml` | AOP 예외 처리 |
-| `context-transaction.xml` | 트랜잭션 설정 — ⚠ **버그 있음, [26장](#26-알려진-이슈--남은-숙제) 참고** |
+> 📂 **볼 파일**: 아래 표에 나온 파일들을 실제로 하나씩 열어서 이름과 내용을 매칭해볼 것.
+> 전부 `src/main/resources/egovframework/spring/` 아래에 있고, `dispatcher-servlet.xml`만
+> `src/main/webapp/WEB-INF/config/egovframework/springmvc/` 아래에 따로 있다.
 
-**ViewResolver 변환 공식** (자주 나오니 외워둘 것):
+| 파일 (전체 경로) | 역할 |
+|---|---|
+| `src/main/webapp/WEB-INF/web.xml` | Filter 등록, DispatcherServlet 등록 → 두 컨텍스트의 시작점 |
+| `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml` | `@Controller` 스캔, ViewResolver(뷰이름→JSP경로 변환), 인터셉터 |
+| `src/main/resources/egovframework/spring/context-common.xml` | `@Service`/`@Mapper` 스캔(Controller 제외), 다국어 MessageSource |
+| `src/main/resources/egovframework/spring/context-datasource.xml` | DB 커넥션 풀(BasicDataSource) |
+| `src/main/resources/egovframework/spring/context-mapper.xml` | MyBatis SqlSessionFactory, `@Mapper` 스캔 |
+| `src/main/resources/egovframework/spring/context-aspect.xml` | AOP 예외 처리 |
+| `src/main/resources/egovframework/spring/context-transaction.xml` | 트랜잭션 설정 — ⚠ **버그 있음, [26장](#26-알려진-이슈--남은-숙제) 참고** |
+
+**ViewResolver 변환 공식** (자주 나오니 외워둘 것 — 위 `dispatcher-servlet.xml`의
+`UrlBasedViewResolver` 빈에서 `prefix`/`suffix` 값을 직접 확인해볼 것):
 ```
 return "user/login"
   → prefix("/WEB-INF/jsp/egovframework/asset/") + "user/login" + suffix(".jsp")
   → /WEB-INF/jsp/egovframework/asset/user/login.jsp
 ```
 
-> **폴더 이름 참고**: JSP 폴더가 `user` / `equipment` / `admin` 세 개로 나뉘어 있다. 원래는
-> `board`(게시판) 폴더 하나에 관리자 화면과 사용자 화면이 다 섞여 있었는데 — eGovFrame 샘플
-> 프로젝트가 기본으로 제공하는 "게시판" 예제 폴더명을 그대로 재활용하다 보니 실제 내용과 안 맞는
-> 이름이 됐던 것. 지금은 `user`(로그인/회원가입), `equipment`(비품 조회·대여·반납 등 사용자
-> self-service), `admin`(role=ADMIN 전용 관리 화면) 세 폴더로 도메인 기준 정리했다.
-> **컨트롤러가 `return`하는 문자열과 실제 JSP 폴더 위치는 항상 1:1로 맞아야 한다** — 폴더를
-> 옮기면 그 폴더를 참조하는 모든 `return "/xxx/Yyy"` 문자열도 같이 고쳐야 한다.
+> **폴더 이름 참고**: JSP 폴더가 `user` / `equipment` / `admin` 세 개로 나뉘어 있다
+> (`src/main/webapp/WEB-INF/jsp/egovframework/asset/` 아래). 원래는 `board`(게시판) 폴더 하나에
+> 관리자 화면과 사용자 화면이 다 섞여 있었는데 — eGovFrame 샘플 프로젝트가 기본으로 제공하는
+> "게시판" 예제 폴더명을 그대로 재활용하다 보니 실제 내용과 안 맞는 이름이 됐던 것. 지금은
+> `user`(로그인/회원가입), `equipment`(비품 조회·대여·반납 등 사용자 self-service), `admin`
+> (role=ADMIN 전용 관리 화면) 세 폴더로 도메인 기준 정리했다. **컨트롤러가 `return`하는
+> 문자열과 실제 JSP 폴더 위치는 항상 1:1로 맞아야 한다** — 폴더를 옮기면 그 폴더를 참조하는
+> 모든 `return "/xxx/Yyy"` 문자열도 같이 고쳐야 한다.
 
 ---
 
 # Part 2. 프레임워크 문법
 
 ## 6. IoC / DI / Bean — 왜 `new`를 안 쓰는가
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/service/impl/UserServiceImpl.java`
+> (클래스 위 `@Service("userService")` 확인) · `src/main/java/egovframework/asset/user/web/UserController.java`
+> (`@Resource(name = "userService")` 필드 확인) · `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (생성자 파라미터로 주입받는 부분 확인)
 
 ```java
 // ❌ 직접 생성 (제어권이 개발자에게 있음)
@@ -196,6 +226,11 @@ public class EquipmentController {   // 생성자 주입 (equipment 모듈, 최�
 
 ## 7. AOP — 예외 처리를 한 곳에 몰아넣는 이유
 
+> 📂 **볼 파일**: `src/main/resources/egovframework/spring/context-aspect.xml`(pointcut/aspect 정의) ·
+> `src/main/java/egovframework/asset/cmmn/AssetExcepHndlr.java` · `src/main/java/egovframework/asset/cmmn/AssetOthersExcepHndlr.java`
+> (실제 예외를 받아서 로그만 찍는 핸들러 2개) · `src/main/java/egovframework/asset/user/service/impl/UserServiceImpl.java`
+> (`insertUser()`에서 일부러 예외를 던지는 지점을 찾아 흐름을 따라가 볼 것)
+
 **AOP 없이 매 메서드마다 try-catch를 반복하는 대신**, `*Impl`로 끝나는 클래스의 모든 메서드를
 Spring이 감시하다가 예외가 터지면 자동으로 처리해준다.
 
@@ -221,6 +256,7 @@ SimpleMappingExceptionResolver → cmmn/egovError.jsp 렌더링
 execution(* egovframework.asset..impl.*Impl.*(..))
 → asset 패키지 하위 어디든, 이름이 Impl로 끝나는 클래스의, 모든 메서드
 ```
+(위 표현식은 `context-aspect.xml`의 `<aop:pointcut id="serviceMethod" ...>`에서 그대로 확인 가능.)
 
 **이게 왜 되냐면**: `UserServiceImpl`이 `EgovAbstractServiceImpl`을 상속하기 때문이다.
 이 상속 하나로 AOP 예외처리 + eGov 추적로그(`LeaveaTrace`)에 자동으로 편입된다 —
@@ -229,6 +265,11 @@ execution(* egovframework.asset..impl.*Impl.*(..))
 ---
 
 ## 8. MyBatis 핵심 3가지
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/service/UserMapper.java`(인터페이스) ·
+> `src/main/resources/egovframework/mapper/asset/UserMapper.xml`(SQL 본문) ·
+> `src/main/resources/egovframework/sqlmap/asset/mappers/sql-mapper-config.xml`(`mapUnderscoreToCamelCase`) ·
+> `src/main/resources/egovframework/mapper/asset/equipment_SQL.xml`(동적 SQL 예시)
 
 **① `#{}` vs `${}` — 보안상 반드시 구분**
 ```sql
@@ -263,6 +304,11 @@ category 파라미터가 없으면 `WHERE`절 자체가 안 생김 → 전체 �
 
 ## 9. Filter vs Interceptor
 
+> 📂 **볼 파일**: `src/main/webapp/WEB-INF/web.xml`(`<filter>`/`<filter-mapping>` 두 블록) ·
+> `src/main/java/egovframework/asset/cmmn/LoginCheckInterceptor.java` ·
+> `src/main/java/egovframework/asset/cmmn/AdminCheckInterceptor.java` ·
+> `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml`(`<mvc:interceptors>`)
+
 | | Filter | Interceptor |
 |---|---|---|
 | 위치 | 서블릿 컨테이너(Tomcat) 레벨, Spring 밖 | Spring MVC 안쪽 |
@@ -279,6 +325,10 @@ eGov가 만든 개념이 아니라 Spring MVC 표준 기능이고, 이 프로젝
 
 ## 10. Validation과 PRG 패턴
 
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/service/UserVO.java`(`@NotBlank`/`@Email`/`@Size`) ·
+> `src/main/java/egovframework/asset/user/web/UserController.java`(`register()`, `login()` 메서드) ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/user/register.jsp`(`<form:errors path="...">` 부분)
+
 **`@Valid` 자동 검증**: `UserVO`에 `@NotBlank`, `@Email`, `@Size` 등을 붙여두면, 컨트롤러가
 `@Valid @ModelAttribute("userVO") UserVO userVO, BindingResult bindingResult`를 받을 때
 Spring이 자동으로 검사하고 결과를 `BindingResult`에 담아준다. `bindingResult.hasErrors()`가
@@ -294,13 +344,17 @@ return "user/main"              → Forward, URL 안 바뀜, 새로고침하면 
 return "redirect:/main.do"      → 302 응답, 브라우저가 새로 GET 요청, 새로고침 안전
 ```
 PRG = Post/Redirect/Get. 이 프로젝트의 모든 POST 처리 메서드(로그인, 가입, 승인, 반려, 등록/수정/삭제)가
-전부 이 패턴을 따른다.
+전부 이 패턴을 따른다 — `UserController.java`/`EquipmentController.java`의 `return "redirect:..."`를
+전부 검색(`Ctrl+Shift+F`로 `redirect:` 찾기)해서 몇 군데인지 세어봐도 좋다.
 
 ---
 
 # Part 3. 도메인으로 이해하기
 
 ## 11. 이 프로젝트의 핵심 도메인: 사용자 상태 4단계
+
+> 📂 **볼 파일**: `src/main/resources/db/asset_schema.sql`(`users` 테이블의 `use_yn` 컬럼 정의) ·
+> `src/main/resources/egovframework/mapper/asset/UserMapper.xml`(아래 표에 나온 select 쿼리 3개)
 
 `users.use_yn` 컬럼 하나가 계정의 상태를 전부 결정한다. **이걸 이해하면 회원가입/승인/로그인/탈퇴가 전부 이해된다.**
 
@@ -334,6 +388,12 @@ PRG = Post/Redirect/Get. 이 프로젝트의 모든 POST 처리 메서드(로그
 ---
 
 ## 12. 로그인/권한 체크 — Interceptor로 리팩터링
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/cmmn/LoginCheckInterceptor.java`(`preHandle()`) ·
+> `src/main/java/egovframework/asset/cmmn/AdminCheckInterceptor.java`(`preHandle()`) ·
+> `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml`(`<mvc:interceptors>` 블록) ·
+> 비교용으로 `src/main/java/egovframework/asset/equipment/EquipmentController.java`를 열어
+> `HttpSession`/`UserVO` import가 없다는 것도 확인해볼 것.
 
 **Before**: 로그인 여부를 확인하는 코드가 `UserController`, `EquipmentController`에
 아래 형태로 12곳 넘게 그대로 복사돼 있었다.
@@ -396,6 +456,12 @@ AdminCheckInterceptor.preHandle()
 
 ## 13. 회원가입 → 승인 → 로그인 흐름
 
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/web/UserController.java`(`register()`, `login()`) ·
+> `src/main/java/egovframework/asset/user/service/impl/UserServiceImpl.java`(`insertUser()`, `login()`) ·
+> `src/main/resources/egovframework/mapper/asset/UserMapper.xml` ·
+> JSP 3종: `.../user/register.jsp`, `.../user/login.jsp`, `.../user/joinResult.jsp`
+> — 아래 흐름을 한 줄씩 읽으면서 대응하는 코드를 직접 찾아 밑줄 그어볼 것.
+
 ```
 [회원가입]
 GET  /user/registerView.do  → register.jsp
@@ -438,6 +504,10 @@ POST /user/login.do
 
 ## 14. 탈퇴 흐름
 
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/web/UserController.java`(`withdraw()`) ·
+> `src/main/java/egovframework/asset/user/service/impl/UserServiceImpl.java`(`withdrawUser()`) ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/user/myInfo.jsp`(탈퇴 버튼과 `<form>`)
+
 ```
 POST /user/withdraw.do
   UserController.withdraw()
@@ -452,6 +522,10 @@ POST /user/withdraw.do
 ---
 
 ## 15. 관리자 승인 화면 흐름
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/web/UserController.java`(`pendingList()`,
+> `approve()`, `reject()`) · `src/main/resources/egovframework/mapper/asset/UserMapper.xml`
+> (`updateUserApprove`, `updateUserReject`) · `src/main/webapp/WEB-INF/jsp/egovframework/asset/admin/ApproveUserList.jsp`
 
 ```
 GET  /user/pendingList.do
@@ -469,6 +543,12 @@ POST /user/reject.do?userId=n   →  updateUserReject : P→R 로 변경 (P 상�
 ---
 
 ## 16. 비품(EQUIPMENT) 목록 + 페이징 흐름
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/EquipmentController.java`(`mainPage()`,
+> `equipmentList()`) · `EquipmentServiceImpl.java` · `EquipmentMapper.java` (모두 같은
+> `src/main/java/egovframework/asset/equipment/` 폴더) · `src/main/resources/egovframework/mapper/asset/equipment_SQL.xml` ·
+> `src/main/java/egovframework/asset/cmmn/PageMaker.java` · `.../cmmn/EquipmentPaging.java` ·
+> JSP: `.../equipment/TestUI.jsp`, `.../equipment/EquipmentList.jsp`
 
 user 모듈과 구조가 다르다: **생성자 주입**, **Map 파라미터로 동적 조건 전달**, **자체 페이징 클래스**.
 
@@ -491,7 +571,8 @@ GET /equipmentList.do?category=노트북&page=2
     → /equipment/EquipmentList.jsp
 ```
 
-**페이징 계산 원리** (`PageMaker.calcData()`):
+**페이징 계산 원리** (`PageMaker.calcData()` — `src/main/java/egovframework/asset/cmmn/PageMaker.java`에서
+직접 코드를 열어 아래 공식과 한 줄씩 대조):
 ```
 displayPageNum = 5   // 한 번에 보여줄 페이지 번호 개수 (1~5, 6~10 ...)
 
@@ -515,6 +596,10 @@ JSP 쪽 핵심 한 줄 (`EquipmentList.jsp`):
 
 ## 17. 헷갈리기 쉬운 것 — `/main.do`는 어디서 처리되는가
 
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/user/web/UserController.java`(`main()` 메서드,
+> `/user/main.do`) · `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (`mainPage()` 메서드, `/main.do`) — 두 `@RequestMapping` 값을 직접 비교해볼 것.
+
 `UserController`에도 `main()` 메서드가 `/user/main.do`로 남아있지만, **실제 로그인 성공 후 이동하는 곳은
 `/main.do`(슬래시로 시작, `/user/`가 없음)이고 이건 `EquipmentController.mainPage()`가 처리한다.**
 `/user/main.do`는 현재 어디서도 호출되지 않는 사실상 죽은 코드다. 헷갈리면 URL의 `/user/` 유무를 확인할 것.
@@ -528,6 +613,10 @@ JSP 쪽 핵심 한 줄 (`EquipmentList.jsp`):
 바꾼 것(정규화). 둘 다 "이미 동작하던 기능을 왜 다시 뜯어고쳤는가"를 이해하는 게 핵심이다.
 
 ## 18. 왜 "승인 게이팅"이 필요했는가
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/RentalServiceImpl.java` ·
+> `src/main/resources/egovframework/mapper/asset/rental_SQL.xml` ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/admin/ApproveList.jsp`
 
 **Before**: 사용자가 대여를 "요청"하면, 승인 절차 없이 그 즉시 모든 효과가 반영됐다.
 ```
@@ -561,6 +650,9 @@ POST /rejectRental.do (관리자가 반려 버튼 클릭)
 
 ## 19. RENTAL/REPORT 테이블 — 새로 생긴 컬럼들
 
+> 📂 **볼 파일**: `src/main/resources/db/asset_schema.sql` — `RENTAL`, `REPORT` 테이블
+> `CREATE TABLE` 문에서 아래 컬럼들의 실제 타입/제약조건을 확인할 것.
+
 ```sql
 RENTAL
   request_status          -- REQUESTED / APPROVED / REJECTED   (대여 자체의 승인 상태)
@@ -581,6 +673,11 @@ REPORT
 ---
 
 ## 20. 대여 요청 승인 흐름
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (`rentalRequestSubmit()`, `approveRental()`, `rejectRental()`) · `RentalServiceImpl.java`
+> (`insertRentalRequest()`, `approveRental()`) · `RentalMapper.java` ·
+> `src/main/resources/egovframework/mapper/asset/rental_SQL.xml`
 
 ```
 [요청]
@@ -614,6 +711,11 @@ POST /rejectRental.do?rentalId=n
 
 ## 21. 연장 요청 승인 흐름 — "임시 저장" 패턴
 
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (`extendRequestSubmit()`, `approveExtend()`, `rejectExtend()`) · `RentalServiceImpl.java`
+> (`requestExtend()`, `approveExtend()`) · `src/main/resources/egovframework/mapper/asset/rental_SQL.xml` ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/equipment/ExtendRequest.jsp`
+
 연장은 조금 더 까다롭다. 대여 요청은 "아직 안 바뀐 상태"가 곧 원래 상태(AVAILABLE)라서
 그냥 안 건드리면 됐지만, 연장은 **이미 존재하는 `return_date` 값을 덮어쓰는 것**이라
 "승인 전까지 어딘가에 새 날짜를 잠깐 보관해둘 곳"이 따로 필요하다. 그게 `requested_return_date`다.
@@ -644,6 +746,11 @@ POST /rejectExtend.do?rentalId=n
 ---
 
 ## 22. 신고 승인 흐름 — 왜 `rental_id`를 저장해야 했나
+
+> 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (`reportIssueSubmit()`, `approveReport()`, `rejectReport()`) · `ReportServiceImpl.java`(`approveReport()`) ·
+> `ReportMapper.java` · `src/main/resources/egovframework/mapper/asset/report_SQL.xml` ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/equipment/ReportIssue.jsp`
 
 신고(REPORT)가 승인되면 두 가지가 함께 일어나야 한다: **비품을 BROKEN으로 바꾸는 것**과
 **그 비품을 빌려간 대여 기록(RENTAL)을 종료시키는 것**. 게이팅을 도입하면서
@@ -679,6 +786,12 @@ POST /rejectReport.do?reportId=n
 ---
 
 ## 23. 카테고리 분리 — CATEGORY 테이블과 FK
+
+> 📂 **볼 파일**: `src/main/resources/db/asset_schema.sql`(`CATEGORY` 테이블, `EQUIPMENT.category_id` FK) ·
+> `src/main/resources/egovframework/mapper/asset/equipment_SQL.xml`(`selectEquipmentList`, `insertEquipment`) ·
+> `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+> (`categoryList()`, `categoryRegister()`, `categoryUpdate()`, `categoryDelete()`) ·
+> JSP: `.../admin/CategoryList.jsp`, `.../admin/EquipmentForm.jsp`
 
 **Before**: `EQUIPMENT.category`가 그냥 문자열(`VARCHAR`)이었다. 등록 화면의 드롭다운도
 JSP에 `모니터`, `노트북` 같은 값을 하드코딩해둔 것이었다. 문제는:
@@ -757,6 +870,9 @@ try {
 
 ## 24. 새 관리자 페이지 추가 체크리스트
 
+> 📂 **볼 파일**: `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml`
+> (세 번째 `<mvc:interceptor>` 블록) · `src/main/java/egovframework/asset/equipment/EquipmentController.java`
+
 관리자 화면(`equipmentForm.do`, `categoryList.do` 등)을 새로 추가할 때마다 실제로 따라야 했던 순서:
 
 1. `EquipmentController`(또는 해당 컨트롤러)에 `@RequestMapping`/`@PostMapping` 메서드 추가
@@ -770,11 +886,15 @@ try {
 
 ## 25. 트러블슈팅 — 자주 만나는 에러
 
+> 📂 **볼 파일**: 에러별로 아래 표의 "확인할 곳" 경로를 그대로 열어보면 된다. 리다이렉트
+> 인코딩 문제는 `src/main/java/egovframework/asset/equipment/EquipmentController.java`의
+> `encode()` 메서드에서 실제 해결 코드를 확인할 것.
+
 | 에러 메시지 | 원인 | 확인할 곳 |
 |---|---|---|
-| `No qualifying bean of type 'UserService'` | `@Service` 누락 또는 스캔 범위 밖 | `context-common.xml`의 `base-package` |
-| `Invalid bound statement (not found)` | Mapper 인터페이스 ↔ XML `id`/`namespace` 불일치 | 메서드명, namespace 오타 |
-| `Neither BindingResult nor plain target object for bean name 'userVO'` | `<form:form modelAttribute="userVO">`인데 Model에 없음 | GET 핸들러에 `model.addAttribute("userVO", new UserVO())` 있는지 |
+| `No qualifying bean of type 'UserService'` | `@Service` 누락 또는 스캔 범위 밖 | `src/main/resources/egovframework/spring/context-common.xml`의 `base-package` |
+| `Invalid bound statement (not found)` | Mapper 인터페이스 ↔ XML `id`/`namespace` 불일치 | `.../user/service/UserMapper.java` ↔ `.../mapper/asset/UserMapper.xml`의 메서드명·namespace 오타 |
+| `Neither BindingResult nor plain target object for bean name 'userVO'` | `<form:form modelAttribute="userVO">`인데 Model에 없음 | GET 핸들러에 `model.addAttribute("userVO", new UserVO())` 있는지 (`UserController.java`) |
 | `Table 'EQUIPMENT'/'users' doesn't exist` | 스키마 미실행 | `src/main/resources/db/asset_schema.sql` 직접 실행 |
 | 새로고침 시 폼 재전송 경고 | 처리 후 `return "뷰이름"`(Forward) 사용 | `return "redirect:...";`로 변경 ([10장](#10-validation과-prg-패턴) PRG 패턴) |
 | 새 공개 페이지가 로그인 화면으로 계속 튕김 | `LoginCheckInterceptor`의 `exclude-mapping`에 경로 추가를 안 함 | `dispatcher-servlet.xml` 확인 ([12장](#12-로그인권한-체크--interceptor로-리팩터링)) |
@@ -798,7 +918,7 @@ return "redirect:/equipmentList.do?category=" + equipmentVO.getCategory();
 그래서 톰캣이 헤더 자체를 통째로 버려버린 것.
 
 ```java
-// ✅ 붙이기 전에 직접 인코딩
+// ✅ 붙이기 전에 직접 인코딩 (EquipmentController.java의 encode() 메서드)
 private String encode(String value) {
     try {
         return URLEncoder.encode(value, "UTF-8");
@@ -814,6 +934,9 @@ return "redirect:/equipmentList.do?category=" + encode(equipmentVO.getCategory()
 ---
 
 ## 26. 알려진 이슈 / 남은 숙제
+
+> 📂 **볼 파일**: `src/main/resources/egovframework/spring/context-transaction.xml`(pointcut 값) ·
+> `src/main/java/egovframework/asset/equipment/ReportServiceImpl.java`(`approveReport()`)
 
 1. **`context-transaction.xml`의 pointcut이 이 프로젝트를 가리키지 않는다**
    ```xml
