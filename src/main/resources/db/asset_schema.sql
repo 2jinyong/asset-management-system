@@ -85,8 +85,10 @@ CREATE TABLE `RENTAL` (
 -- ====================================================================================
 
 -- 4. 신고 테이블 생성
--- 신고 접수(status=PENDING) 시점에는 EQUIPMENT.status 나 RENTAL 을 건드리지 않고,
--- 관리자가 승인해야 비품이 BROKEN 처리되고 관련 대여 건이 종료된다.
+-- 신고 접수(status=PENDING) 즉시 EQUIPMENT.status 를 BROKEN 으로 바꿔 다른 사용자가 대여하지 못하게 막는다.
+-- 관리자가 고장접수(CONFIRMED) 처리하면 그 시점에 관련 대여 건을 종료하고,
+-- 수리완료(RESOLVED) 처리하면 EQUIPMENT.status 를 다시 AVAILABLE 로 되돌린다.
+-- 반려(REJECTED) 시에는 EQUIPMENT.status 를 RENTED 로 복구한다(대여 건은 애초에 건드리지 않았으므로 그대로 살아있음).
 
 CREATE TABLE `REPORT` (
   `report_id` bigint NOT NULL AUTO_INCREMENT,
@@ -95,8 +97,8 @@ CREATE TABLE `REPORT` (
   `user_id` bigint NOT NULL,
   `content` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
   `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING' COMMENT '신고 처리 상태: PENDING(승인대기) / APPROVED(승인) / REJECTED(반려)',
-  `rental_id` bigint DEFAULT NULL COMMENT '신고 대상 대여 건 (승인 시 종료 처리용)',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING' COMMENT '신고 처리 상태: PENDING(확인중) / CONFIRMED(고장접수) / REPAIRING(수리중) / RESOLVED(수리완료) / REJECTED(반려)',
+  `rental_id` bigint DEFAULT NULL COMMENT '신고 대상 대여 건 (고장접수 시 종료 처리용)',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`report_id`),
   KEY `equipment_id` (`equipment_id`),

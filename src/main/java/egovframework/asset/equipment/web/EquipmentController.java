@@ -1,13 +1,17 @@
 package egovframework.asset.equipment.web;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import egovframework.asset.cmmn.EquipmentPaging;
@@ -19,8 +23,10 @@ import egovframework.asset.rental.service.RentalVO;
 import egovframework.asset.report.service.ReportService;
 import egovframework.asset.report.service.ReportVO;
 import egovframework.asset.user.service.UserVO;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -30,6 +36,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 public class EquipmentController {
+
+	@Value("${upload.report.dir}")
+	private String reportUploadDir;
 
 	private final EquipmentService equipmentService;
 	private final RentalService rentalService;
@@ -263,9 +272,8 @@ public class EquipmentController {
 
 		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 
-		String uploadDir = "C:/asset-uploads/report/";
 		String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-		String savePath = uploadDir + fileName;
+		String savePath = reportUploadDir + fileName;
 
 		try {
 			image.transferTo(new File(savePath));
@@ -293,8 +301,6 @@ public class EquipmentController {
 		List<Map<String, Object>> fullList;
 		if ("extend".equals(type)) {
 			fullList = rentalService.getPendingExtends();
-		} else if ("report".equals(type)) {
-			fullList = reportService.getPendingReports();
 		} else {
 			fullList = rentalService.getPendingRentals();
 		}
@@ -340,15 +346,72 @@ public class EquipmentController {
 		return "redirect:/approveList.do?type=extend";
 	}
 
-	@PostMapping("/approveReport.do")
-	public String approveReport(@RequestParam("reportId") Long reportId) {
-		reportService.approveReport(reportId);
-		return "redirect:/approveList.do?type=report";
+	@RequestMapping("/issueList.do")
+	public String issueList(@RequestParam(value = "page", defaultValue = "1") int page, ModelMap model) {
+		List<Map<String, Object>> fullList = reportService.getOpenReports();
+
+		EquipmentPaging paging = new EquipmentPaging();
+		paging.setPage(page);
+		paging.setPerPageNum(10);
+
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setPaging(paging);
+		pageMaker.setTotalCount(fullList.size());
+
+		int from = Math.min(paging.getPageStart(), fullList.size());
+		int to = Math.min(from + paging.getPerPageNum(), fullList.size());
+
+		model.addAttribute("list", fullList.subList(from, to));
+		model.addAttribute("pageMaker", pageMaker);
+		return "/admin/IssueList";
 	}
 
-	@PostMapping("/rejectReport.do")
-	public String rejectReport(@RequestParam("reportId") Long reportId) {
+	@PostMapping("/reportConfirm.do")
+	public String reportConfirm(@RequestParam("reportId") Long reportId) {
+		reportService.confirmReport(reportId);
+		return "redirect:/issueList.do";
+	}
+
+	@PostMapping("/reportStartRepair.do")
+	public String reportStartRepair(@RequestParam("reportId") Long reportId) {
+		reportService.startRepair(reportId);
+		return "redirect:/issueList.do";
+	}
+
+	@PostMapping("/reportResolve.do")
+	public String reportResolve(@RequestParam("reportId") Long reportId) {
+		reportService.resolveReport(reportId);
+		return "redirect:/issueList.do";
+	}
+
+	@PostMapping("/reportReject.do")
+	public String reportReject(@RequestParam("reportId") Long reportId) {
 		reportService.rejectReport(reportId);
-		return "redirect:/approveList.do?type=report";
+		return "redirect:/issueList.do";
+	}
+
+	@RequestMapping(value = "/reportImage.do", method = RequestMethod.GET)
+	public void reportImage(@RequestParam("reportId") Long reportId, HttpServletResponse response) throws IOException {
+		Map<String, Object> report = reportService.getReport(reportId);
+		String imagePath = report != null ? (String) report.get("imagePath") : null;
+		if (imagePath == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		// 저장된 값이 절대경로/파일명 중 무엇이든 파일명만 취해서 업로드 폴더 기준으로 다시 조합한다
+		// (경로 조작으로 업로드 폴더 밖의 파일을 읽지 못하도록 막기 위함).
+		File uploadDir = new File(reportUploadDir).getCanonicalFile();
+		File file = new File(uploadDir, new File(imagePath).getName()).getCanonicalFile();
+		if (!file.getPath().startsWith(uploadDir.getPath() + File.separator) || !file.isFile()) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		String contentType = URLConnection.guessContentTypeFromName(file.getName());
+		response.setContentType(contentType != null ? contentType : "application/octet-stream");
+		try (InputStream in = new FileInputStream(file)) {
+			FileCopyUtils.copy(in, response.getOutputStream());
+		}
 	}
 }
