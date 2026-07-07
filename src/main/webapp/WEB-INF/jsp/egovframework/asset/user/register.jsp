@@ -92,7 +92,7 @@ body {
 		<div class="register-card card">
 
 			<div class="card-header">
-				<h1>&#128221; 회원가입</h1>
+				<h1>회원가입</h1>
 				<p>사내 비품관리시스템 계정을 만들어보세요</p>
 			</div>
 
@@ -101,7 +101,7 @@ body {
 				<%-- 에러 메시지 (중복 이메일 등) --%>
 				<c:if test="${not empty errorMsg}">
 					<div class="alert alert-danger py-2 px-3" role="alert">
-						<small>&#9888; ${errorMsg}</small>
+						<small>${errorMsg}</small>
 					</div>
 				</c:if>
 
@@ -232,7 +232,7 @@ body {
 	        if (pwc === '') {
 	            pwMatchMsg.textContent = '';
 	        } else if (pw === pwc) {
-	            pwMatchMsg.textContent = '비밀번호가 일치합니다 ✔';
+	            pwMatchMsg.textContent = '비밀번호가 일치합니다';
 	            pwMatchMsg.classList.add('text-success');
 	        } else {
 	            pwMatchMsg.textContent = '비밀번호가 일치하지 않습니다';

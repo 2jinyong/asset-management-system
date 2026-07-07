@@ -24,6 +24,13 @@
     -->
     <mvc:annotation-driven/>
 
+    <!--
+        [업로드 경로 등 환경별 설정값]
+        root context(context-datasource.xml)의 property-placeholder는 이 하위(dispatcher-servlet) 컨텍스트의
+        @Value 주입까지는 적용되지 않으므로, @Controller 에서 ${...} 를 쓰려면 여기에도 별도로 등록해야 한다.
+    -->
+    <context:property-placeholder location="classpath:upload.properties"/>
+
     <!-- egovframework.asset 패키지의 @Controller 클래스 자동 탐색 -->
     <context:component-scan base-package="egovframework.asset">
         <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
@@ -68,8 +75,12 @@
             <mvc:mapping path="/rejectRental.do"/>
             <mvc:mapping path="/approveExtend.do"/>
             <mvc:mapping path="/rejectExtend.do"/>
-            <mvc:mapping path="/approveReport.do"/>
-            <mvc:mapping path="/rejectReport.do"/>
+            <mvc:mapping path="/issueList.do"/>
+            <mvc:mapping path="/reportConfirm.do"/>
+            <mvc:mapping path="/reportStartRepair.do"/>
+            <mvc:mapping path="/reportResolve.do"/>
+            <mvc:mapping path="/reportReject.do"/>
+            <mvc:mapping path="/reportImage.do"/>
             <mvc:mapping path="/equipmentForm.do"/>
             <mvc:mapping path="/equipmentRegister.do"/>
             <mvc:mapping path="/equipmentUpdate.do"/>

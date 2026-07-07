@@ -13,6 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입 완료 | 사내 비품관리시스템</title>
     <link rel="stylesheet" href="<c:url value='/css/egovframework/bootstrap/css/bootstrap.min.css'/>">
+    <link rel="stylesheet" href="<c:url value='/css/egovframework/asset-common.css'/>">
     <style>
         body { background-color: #f0f2f5; }
         .result-wrapper {
@@ -29,14 +30,20 @@
             box-shadow: 0 4px 24px rgba(0,0,0,0.10);
             text-align: center;
         }
-        .check-icon { font-size: 4rem; line-height: 1; }
+        .result-card .card-accent {
+            height: 6px;
+            background: #0e9f6e;
+            border-radius: 12px 12px 0 0;
+        }
     </style>
 </head>
 <body>
 
 <div class="result-wrapper">
-    <div class="result-card card p-5">
-        <div class="check-icon mb-3">&#9989;</div>
+    <div class="result-card card">
+        <div class="card-accent"></div>
+        <div class="p-5">
+        <span class="badge badge-soft-success rounded-pill mb-3 px-3 py-2">신청 완료</span>
         <h2 class="fw-bold mb-2">가입 완료!</h2>
 
         <%--
@@ -61,6 +68,7 @@
         <a href="<c:url value='/user/loginView.do'/>" class="btn btn-primary btn-lg w-100">
             로그인 하러 가기
         </a>
+        </div>
     </div>
 </div>
 

@@ -76,7 +76,7 @@
 
         <%-- 카드 헤더 --%>
         <div class="card-header">
-            <h1>&#128179; 사내 비품관리시스템</h1>
+            <h1>사내 비품관리시스템</h1>
             <p>이메일과 비밀번호를 입력해 로그인하세요</p>
         </div>
 
@@ -91,7 +91,7 @@
             --%>
             <c:if test="${not empty errorMsg}">
                 <div class="alert alert-danger py-2 px-3" role="alert">
-                    <small>&#9888; ${errorMsg}</small>
+                    <small>${errorMsg}</small>
                 </div>
             </c:if>
 

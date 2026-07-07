@@ -9,8 +9,7 @@ import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
 public interface ReportMapper {
     int insertReport(ReportVO reportVO);
 
-    List<Map<String, Object>> selectPendingReports();
+    List<Map<String, Object>> selectOpenReports();
     Map<String, Object> selectReportById(Long reportId);
-    int approveReport(Long reportId);
-    int rejectReport(Long reportId);
+    int updateReportStatus(Map<String, Object> params);
 }

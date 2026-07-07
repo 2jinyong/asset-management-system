@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **월 (1일차)** | Part 1+2 (1~10장) | 아키텍처 큰 그림, 왜 eGovFrame인지, IoC/AOP/MyBatis/Interceptor 문법 | 표·코드 스니펫 위주라 상대적으로 가볍게 훑을 수 있음 |
 | **화 (2일차)** | Part 3 (11~17장) | 사용자 상태값, 인터셉터 리팩터링, 가입→승인→로그인→탈퇴, 페이징 | 실제 컨트롤러/서비스/매퍼 코드를 열어 대조해야 해서 가장 오래 걸림 |
-| **수 (3일차)** | Part 4+5 (18~26장) | 승인 게이팅(대여/연장/신고), 카테고리 FK 정규화, 체크리스트·트러블슈팅 | 화요일에 익힌 패턴(게이트/PRG/FK)의 응용이라 두 번째 바퀴 도는 느낌 |
+| **수 (3일차)** | Part 4+5 (18~27장) | 승인 게이팅(대여/연장), 신고 상태 머신, 정적 리소스 스트리밍, 카테고리 FK 정규화, 체크리스트·트러블슈팅 | 화요일에 익힌 패턴(게이트/PRG/FK)의 응용이라 두 번째 바퀴 도는 느낌 |
 
 ---
 
@@ -24,9 +24,9 @@
 
 **Part 3. 도메인으로 이해하기** — [11](#11-이-프로젝트의-핵심-도메인-사용자-상태-4단계) 사용자 상태 · [12](#12-로그인권한-체크--interceptor로-리팩터링) 인터셉터 리팩터링 · [13](#13-회원가입--승인--로그인-흐름) 가입~로그인 · [14](#14-탈퇴-흐름) 탈퇴 · [15](#15-관리자-승인-화면-흐름) 승인 화면 · [16](#16-비품equipment-목록--페이징-흐름) 페이징 · [17](#17-헷갈리기-쉬운-것--maindo는-어디서-처리되는가) main.do 함정
 
-**Part 4. 심화 — 승인 게이팅 & 정규화** — [18](#18-왜-승인-게이팅이-필요했는가) 게이팅 이유 · [19](#19-rentalreport-테이블--새로-생긴-컬럼들) 신규 컬럼 · [20](#20-대여-요청-승인-흐름) 대여 승인 · [21](#21-연장-요청-승인-흐름--임시-저장-패턴) 연장 승인 · [22](#22-신고-승인-흐름--왜-rental_id를-저장해야-했나) 신고 승인 · [23](#23-카테고리-분리--category-테이블과-fk) 카테고리 FK
+**Part 4. 심화 — 승인 게이팅 & 정규화** — [18](#18-왜-승인-게이팅이-필요했는가) 게이팅 이유 · [19](#19-rentalreport-테이블--새로-생긴-컬럼들) 신규 컬럼 · [20](#20-대여-요청-승인-흐름) 대여 승인 · [21](#21-연장-요청-승인-흐름--임시-저장-패턴) 연장 승인 · [22](#22-신고-처리-흐름--승인-대신-상태-머신을-쓴-이유) 신고 상태 머신 · [23](#23-정적-리소스-서빙의-한계--신고-사진을-url로-못-보여주고-스트리밍한-이유) 이미지 스트리밍 · [24](#24-카테고리-분리--category-테이블과-fk) 카테고리 FK
 
-**Part 5. 실전** — [24](#24-새-관리자-페이지-추가-체크리스트) 신규 화면 체크리스트 · [25](#25-트러블슈팅--자주-만나는-에러) 트러블슈팅 · [26](#26-알려진-이슈--남은-숙제) 알려진 이슈 · [요약 카드](#요약-카드)
+**Part 5. 실전** — [25](#25-새-관리자-페이지-추가-체크리스트) 신규 화면 체크리스트 · [26](#26-트러블슈팅--자주-만나는-에러) 트러블슈팅 · [27](#27-알려진-이슈--남은-숙제) 알려진 이슈 · [요약 카드](#요약-카드)
 
 ---
 
@@ -146,6 +146,19 @@ Controller는 "웹 요청 처리 전용"이라 Servlet Context에 따로 둔다.
 → Controller는 Service를 주입받을 수 있지만, Service가 Controller를 주입받을 순 없다
 (3장의 계층 방향 규칙이 컨텍스트 분리로도 강제되는 셈).
 
+> **실전에서 만난 사례 — `@Value`가 Root에 등록해도 Controller에서 안 먹힌다.**
+> 신고 사진 업로드 폴더 경로(`upload.report.dir`)를 하드코딩 대신 `upload.properties`로 빼면서
+> `EquipmentController`(`@Controller`)에 `@Value("${upload.report.dir}")` 필드를 추가했는데,
+> **Root Context인 `context-datasource.xml`에 이미 있는 `<context:property-placeholder>`
+> (db.properties용)만으로는 이 값이 채워지지 않는다.** 이유는 위 그림 그대로다 —
+> `PropertyPlaceholderConfigurer`는 `BeanFactoryPostProcessor`인데, 이건 "자기가 등록된
+> ApplicationContext 안의 빈"에만 적용되고, 자식 컨텍스트가 부모의 빈 **정의**를 참조할 수 있는 것과
+> `BeanFactoryPostProcessor`가 자식 컨텍스트까지 넘어가서 동작하는 것은 별개의 문제다.
+> `@Controller`는 Servlet(자식) Context에서 스캔되므로, 그 안에서 `${...}`를 쓰려면
+> **`dispatcher-servlet.xml`에도 `<context:property-placeholder>`를 별도로 등록**해야 한다
+> (`upload.properties`를 가리키는 새 선언 추가). "부모 컨텍스트에 설정했으니 자식도 당연히
+> 보이겠지"라고 생각하기 쉬운데, Bean **후처리기**는 컨텍스트 경계를 안 넘는다는 게 핵심.
+
 ---
 
 ## 5. 설정 파일 지도
@@ -162,7 +175,7 @@ Controller는 "웹 요청 처리 전용"이라 Servlet Context에 따로 둔다.
 | `src/main/resources/egovframework/spring/context-datasource.xml` | DB 커넥션 풀(BasicDataSource) |
 | `src/main/resources/egovframework/spring/context-mapper.xml` | MyBatis SqlSessionFactory, `@Mapper` 스캔 |
 | `src/main/resources/egovframework/spring/context-aspect.xml` | AOP 예외 처리 |
-| `src/main/resources/egovframework/spring/context-transaction.xml` | 트랜잭션 설정 — ⚠ **버그 있음, [26장](#26-알려진-이슈--남은-숙제) 참고** |
+| `src/main/resources/egovframework/spring/context-transaction.xml` | 트랜잭션 설정 — ⚠ **버그 있음, [27장](#27-알려진-이슈--남은-숙제) 참고** |
 
 **ViewResolver 변환 공식** (자주 나오니 외워둘 것 — 위 `dispatcher-servlet.xml`의
 `UrlBasedViewResolver` 빈에서 `prefix`/`suffix` 값을 직접 확인해볼 것):
@@ -450,7 +463,7 @@ AdminCheckInterceptor.preHandle()
 > ⚠ **인터셉터를 추가할 때 흔한 실수**: 새 공개 페이지(로그인 필요 없는 화면)를 만들고
 > `exclude-mapping`에 추가하는 걸 깜빡하면, 그 페이지 자체가 로그인 화면으로 무한 리다이렉트된다.
 > 반대로 새 관리자 화면을 만들고 `AdminCheckInterceptor`의 `mvc:mapping`에 경로를 안 넣으면
-> 일반 사용자도 접근할 수 있게 된다 — 두 실수 모두 눈에 잘 안 띄니 주의 ([24장](#24-새-관리자-페이지-추가-체크리스트) 체크리스트 참고).
+> 일반 사용자도 접근할 수 있게 된다 — 두 실수 모두 눈에 잘 안 띄니 주의 ([25장](#25-새-관리자-페이지-추가-체크리스트) 체크리스트 참고).
 
 ---
 
@@ -661,8 +674,8 @@ RENTAL
   extend_reason            -- 연장 사유
 
 REPORT
-  status                   -- PENDING / APPROVED / REJECTED
-  rental_id                -- 이 신고가 어떤 대여 건에 대한 것인지 (승인 시 그 대여를 종료시키기 위해 필요)
+  status                   -- PENDING(확인중) / CONFIRMED(고장접수) / REPAIRING(수리중) / RESOLVED(수리완료) / REJECTED(반려)
+  rental_id                -- 이 신고가 어떤 대여 건에 대한 것인지 (고장접수 시 그 대여를 종료시키기 위해 필요)
 ```
 
 `request_status`와 `extend_status`가 **분리되어 있는 이유**: 대여는 이미 승인(APPROVED)됐는데
@@ -704,7 +717,7 @@ POST /rejectRental.do?rentalId=n
 
 **멀티테이블 UPDATE가 왜 여기서 쓰였나**: "승인하면 RENTAL도 바뀌고 EQUIPMENT도 바뀐다"를
 한 SQL 문으로 처리하면, Java 코드에서 두 번 나눠 호출하는 것보다 원자적(atomic)이다.
-(22장에서 보듯 REPORT 승인 쪽은 멀티테이블 UPDATE 대신 여러 Mapper 호출을 한 트랜잭션으로
+(22장에서 보듯 REPORT 처리 쪽은 멀티테이블 UPDATE 대신 여러 Mapper 호출을 한 트랜잭션으로
 묶는 방식을 썼다 — 상황에 따라 방식이 다르다는 것도 봐 둘 것.)
 
 ---
@@ -745,47 +758,143 @@ POST /rejectExtend.do?rentalId=n
 
 ---
 
-## 22. 신고 승인 흐름 — 왜 `rental_id`를 저장해야 했나
+## 22. 신고 처리 흐름 — 승인 대신 상태 머신을 쓴 이유
 
 > 📂 **볼 파일**: `src/main/java/egovframework/asset/equipment/EquipmentController.java`
-> (`reportIssueSubmit()`, `approveReport()`, `rejectReport()`) · `ReportServiceImpl.java`(`approveReport()`) ·
-> `ReportMapper.java` · `src/main/resources/egovframework/mapper/asset/report_SQL.xml` ·
-> `src/main/webapp/WEB-INF/jsp/egovframework/asset/equipment/ReportIssue.jsp`
+> (`reportIssueSubmit()`, `issueList()`, `reportConfirm()`, `reportStartRepair()`, `reportResolve()`, `reportReject()`) ·
+> `ReportServiceImpl.java`(전체) · `ReportMapper.java` · `src/main/resources/egovframework/mapper/asset/report_SQL.xml` ·
+> JSP: `.../equipment/ReportIssue.jsp`(신고 접수), `.../admin/IssueList.jsp`(관리자 처리 화면)
 
-신고(REPORT)가 승인되면 두 가지가 함께 일어나야 한다: **비품을 BROKEN으로 바꾸는 것**과
-**그 비품을 빌려간 대여 기록(RENTAL)을 종료시키는 것**. 게이팅을 도입하면서
-"신고 접수 시점엔 아무것도 안 하고, 승인 시점에만 처리"로 바꿨는데, 그러면
-**승인하는 시점(나중)에는 신고 접수 시점(예전)에만 알 수 있었던 `rentalId`가 필요**해진다.
-그래서 `REPORT.rental_id` 컬럼을 새로 추가해서 접수 시점에 저장해두고, 승인 시점에 꺼내 쓴다.
+**신고는 대여/연장과 똑같은 "승인 게이팅"([18장](#18-왜-승인-게이팅이-필요했는가)) 패턴을 안 따른다 —
+왜 다른지가 이 장의 핵심이다.** 대여 요청은 "이걸 대여해줘도 되는지"를 관리자가 아직 모르니
+승인 전까지는 아무 효과도 주면 안 되는 게 맞다. 반면 신고는 **사용자가 이미 겪은 사실**을
+알리는 것이다 — "이게 고장났는지 안 났는지 관리자가 승인해서 결정한다"는 게 오히려 어색하다.
+그래서 신고는 접수 즉시 효과(비품 BROKEN)를 반영하고, 관리자는 "승인/반려"가 아니라
+**그 이후의 처리 단계(확인 → 고장접수 → 수리중 → 완료)를 진행하는 역할**로 바뀌었다.
 
 ```
-[접수]
+REPORT.status 상태 머신
+
+PENDING(확인중) ──관리자: 고장접수──▶ CONFIRMED(고장접수) ──관리자: 수리 시작──▶ REPAIRING(수리중) ──관리자: 수리 완료──▶ RESOLVED(완료)
+     │
+     └──관리자: 반려(오신고)──▶ REJECTED(반려)
+```
+
+```
+[접수]                                          ← 즉시 효과 반영! (대여/연장과 다른 지점)
 POST /reportIssue.do
-  reportService.insertReport(reportVO)
-    → INSERT INTO REPORT (..., rental_id, status) VALUES (..., ?, 'PENDING')
-      ← 여기서 미리 rental_id를 저장해둔다 (나중에 쓰려고)
+  reportService.insertReport(reportVO)          ← @Transactional
+    1. INSERT INTO REPORT (..., rental_id, status) VALUES (..., ?, 'PENDING')
+    2. rentalMapper.updateEquipmentStatus(equipmentId, 'BROKEN')
+       ← 이 시점에 바로 BROKEN 처리해서 다른 사람이 못 빌리게 막는다.
+       ← 신고자의 RENTAL 행은 아직 안 건드림 (반려 시 되돌리기 위해 살려둠)
 
-[승인]
-POST /approveReport.do?reportId=n
-  ReportServiceImpl.approveReport(n)  ← @Transactional
-    1. reportMapper.selectReportById(n) 로 equipmentId, rentalId 를 다시 조회
-    2. reportMapper.approveReport(n) → REPORT.status = 'APPROVED'
-    3. rentalMapper.updateEquipmentStatus(equipmentId, 'BROKEN')
-    4. rentalMapper.deleteRental(rentalId)   ← 대여 기록 종료
+[관리자: 고장접수]  (issueList.do 화면, 상태=PENDING 건에서만 보이는 버튼)
+POST /reportConfirm.do?reportId=n
+  ReportServiceImpl.confirmReport(n)            ← @Transactional
+    1. REPORT.status = 'CONFIRMED'
+    2. rentalMapper.deleteRental(rentalId)      ← 이 시점에야 대여 기록을 종료
+       (비품은 접수 시점에 이미 BROKEN이라 여기서 또 바꿀 필요 없음)
 
-[반려]
-POST /rejectReport.do?reportId=n
-  → REPORT.status = 'REJECTED' 만 바뀌고, 비품/대여는 그대로
+[관리자: 반려 — 오신고/중복신고]  (PENDING 건에서만 가능)
+POST /reportReject.do?reportId=n
+  ReportServiceImpl.rejectReport(n)             ← @Transactional
+    1. REPORT.status = 'REJECTED'
+    2. rentalMapper.updateEquipmentStatus(equipmentId, 'RENTED')
+       ← RENTAL을 접수 시점에 안 지워뒀기 때문에 이 되돌리기가 가능하다 (핵심 설계 포인트)
+
+[관리자: 수리 시작]  (CONFIRMED 건에서만 가능)
+POST /reportStartRepair.do?reportId=n
+  → REPORT.status = 'REPAIRING' 만 바뀜 (비품은 계속 BROKEN)
+
+[관리자: 수리 완료]  (REPAIRING 건에서만 가능)
+POST /reportResolve.do?reportId=n
+  ReportServiceImpl.resolveReport(n)            ← @Transactional
+    1. REPORT.status = 'RESOLVED'
+    2. rentalMapper.updateEquipmentStatus(equipmentId, 'AVAILABLE')  ← 다시 대여 가능
 ```
 
-**[26장](#26-알려진-이슈--남은-숙제)에서 다루는 `context-transaction.xml` 버그가 바로 여기서 문제가 된다.**
-위 승인 로직은 Mapper를 3번 연속 호출하는데(REPORT 수정 → EQUIPMENT 수정 → RENTAL 삭제),
-`@Transactional`이 제대로 안 걸려 있으면 3번 중 두 번째에서 에러가 나도 첫 번째 변경은 이미
-커밋된 채로 남는다 — 데이터 일관성이 깨질 수 있는 지점.
+**"반려하면 RENTAL을 복구해야 하는데, 이미 지워버렸으면 못 되돌린다"는 게 이 설계에서
+가장 중요한 결정이다.** 그래서 대여 기록을 지우는 시점을 **접수 때가 아니라 고장접수(CONFIRMED)
+때로 미뤘다** — PENDING 상태에서는 아직 "진짜 고장"인지 확정되지 않았으니, 대여 기록을 살려둬야
+반려 시 자연스럽게 원상 복구(RENTED)가 된다.
+
+**`getOpenReports()`가 왜 `WHERE status IN ('PENDING','CONFIRMED','REPAIRING')`인가**:
+관리자 화면(`issueList.do`)은 "아직 처리 중인 건"만 보여줘야 한다. RESOLVED/REJECTED는
+DB에서 지우지 않고 이력으로 남기되(나중에 통계·감사 용도), 이 조건 하나로 목록에서만 자연스럽게
+빠지게 했다 — **"삭제"가 아니라 "조회 조건에서 제외"로 처리하는 소프트 삭제 패턴**([14장](#14-탈퇴-흐름)의
+`use_yn='N'`과 같은 발상이다.
+
+**[27장](#27-알려진-이슈--남은-숙제)에서 다루는 `context-transaction.xml` 버그가 바로 여기서 문제가 된다.**
+`confirmReport()`/`resolveReport()`/`rejectReport()` 모두 REPORT 상태 변경 + EQUIPMENT(또는 RENTAL)
+변경을 한 메서드 안에서 연속 호출하는데, `@Transactional`이 제대로 안 걸려 있으면 두 번째 호출에서
+에러가 나도 첫 번째 변경은 이미 커밋된 채로 남는다 — 데이터 일관성이 깨질 수 있는 지점.
 
 ---
 
-## 23. 카테고리 분리 — CATEGORY 테이블과 FK
+## 23. 정적 리소스 서빙의 한계 — 신고 사진을 URL로 못 보여주고 스트리밍한 이유
+
+> 📂 **볼 파일**: `src/main/webapp/WEB-INF/web.xml`(`<servlet-mapping>`의 `<url-pattern>*.do</url-pattern>`) ·
+> `src/main/java/egovframework/asset/equipment/EquipmentController.java`(`reportImage()`) ·
+> `src/main/webapp/WEB-INF/jsp/egovframework/asset/admin/IssueList.jsp`(`<img>` 태그)
+
+**증상**: 신고 사진은 분명 서버 로컬 디스크(`upload.report.dir` 경로)에 잘 저장되는데,
+관리자 화면에 항상 빈 칸으로만 보였다.
+
+**원인 ①** — 업로드 폴더가 웹앱 바깥의 임의 경로(`C:/asset-uploads/report/`)라서, 원래
+`css/`, `images/` 폴더처럼 "웹앱 안에 있어서 톰캣 기본 서블릿이 그냥 파일로 서빙해주는" 방식이
+안 통한다. `<mvc:resources>`로 그 경로를 URL에 매핑해줄 수는 있지만…
+
+**원인 ②(진짜 이유)** — [1장](#1-전체-요청-흐름-한-장)에서 본 것처럼 이 프로젝트의
+`DispatcherServlet`은 `web.xml`에 `<url-pattern>*.do</url-pattern>`로만 등록돼 있다.
+`/uploads/report/사진.jpg` 같은 URL은 `.do`로 안 끝나므로 **Spring이 관장하는 요청 자체가
+아니다** — `<mvc:resources>`를 dispatcher-servlet.xml에 아무리 등록해도, 그 URL이 애초에
+DispatcherServlet한테 안 오니 적용될 방법이 없다.
+
+**해결**: URL 매핑으로 "그냥 서빙"하는 걸 포기하고, `*.do`로 끝나는 일반 컨트롤러 메서드가
+파일을 **직접 읽어서 응답 본문에 그대로 써주는(스트리밍하는)** 방식을 썼다.
+
+```java
+@RequestMapping(value = "/reportImage.do", method = RequestMethod.GET)
+public void reportImage(@RequestParam("reportId") Long reportId, HttpServletResponse response) throws IOException {
+    Map<String, Object> report = reportService.getReport(reportId);   // DB에서 image_path 조회
+    String imagePath = (String) report.get("imagePath");
+
+    // 저장된 값이 절대경로든 파일명이든, 파일명만 취해 업로드 폴더 기준으로 재조합
+    // → 경로 조작(path traversal)으로 업로드 폴더 밖 파일을 읽지 못하도록 방어
+    File uploadDir = new File(reportUploadDir).getCanonicalFile();
+    File file = new File(uploadDir, new File(imagePath).getName()).getCanonicalFile();
+    if (!file.getPath().startsWith(uploadDir.getPath() + File.separator) || !file.isFile()) {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        return;
+    }
+
+    response.setContentType(URLConnection.guessContentTypeFromName(file.getName()));
+    try (InputStream in = new FileInputStream(file)) {
+        FileCopyUtils.copy(in, response.getOutputStream());   // 파일 바이트를 그대로 응답 본문에 흘려보냄
+    }
+}
+```
+
+```jsp
+<%-- IssueList.jsp: 그냥 파일 URL이 아니라 reportId만 넘기고, 실제 파일 찾기는 서버가 함 --%>
+<img src="<c:url value='/reportImage.do'/>?reportId=${item.reportId}" ...>
+```
+
+**`reportId`만 넘기고 파일 경로 자체는 절대 클라이언트에 노출하지 않는 이유**: 만약 JSP가
+`imagePath`(서버의 실제 파일 경로)를 그대로 쿼리스트링에 실어 보내면, 사용자가 그 값을
+조작해서(`?path=../../../etc/passwd` 등) 서버의 다른 파일을 읽어낼 수 있다 — **경로 조작(path
+traversal) 취약점**. `reportId`라는 불투명한 숫자만 받고, 실제 파일 경로는 서버가 DB에서 조회해서
+알아내는 구조라 이 공격 자체가 성립하지 않는다. `new File(imagePath).getName()`으로 파일명만
+뽑아 고정된 업로드 폴더에 다시 붙이는 것도 같은 이유의 방어다.
+
+이 엔드포인트는 관리자 전용 화면에서만 쓰이므로 `dispatcher-servlet.xml`의
+`AdminCheckInterceptor` 매핑 목록에도 등록해뒀다 — 등록을 빼먹으면 로그인만 한 일반 사용자도
+`reportId`를 바꿔가며 다른 사람의 신고 사진을 볼 수 있게 된다.
+
+---
+
+## 24. 카테고리 분리 — CATEGORY 테이블과 FK
 
 > 📂 **볼 파일**: `src/main/resources/db/asset_schema.sql`(`CATEGORY` 테이블, `EQUIPMENT.category_id` FK) ·
 > `src/main/resources/egovframework/mapper/asset/equipment_SQL.xml`(`selectEquipmentList`, `insertEquipment`) ·
@@ -868,7 +977,7 @@ try {
 
 # Part 5. 실전
 
-## 24. 새 관리자 페이지 추가 체크리스트
+## 25. 새 관리자 페이지 추가 체크리스트
 
 > 📂 **볼 파일**: `src/main/webapp/WEB-INF/config/egovframework/springmvc/dispatcher-servlet.xml`
 > (세 번째 `<mvc:interceptor>` 블록) · `src/main/java/egovframework/asset/equipment/EquipmentController.java`
@@ -880,11 +989,11 @@ try {
    `<mvc:mapping path="/새경로.do"/>` 추가 — **이걸 빼먹으면 일반 사용자도 URL을 직접 치면
    들어갈 수 있다.** 화면에 링크를 안 보여주는 것만으로는 보안이 되지 않는다(버튼을 숨기는 것과
    서버가 막는 것은 다른 문제 — [14장](#14-탈퇴-흐름) `withdraw()`의 ADMIN 체크와 같은 이치).
-3. 리다이렉트 대상 URL에 한글 등 비ASCII 값을 붙여야 한다면 [25장](#25-트러블슈팅--자주-만나는-에러)의 인코딩 문제를 기억할 것
+3. 리다이렉트 대상 URL에 한글 등 비ASCII 값을 붙여야 한다면 [26장](#26-트러블슈팅--자주-만나는-에러)의 인코딩 문제를 기억할 것
 
 ---
 
-## 25. 트러블슈팅 — 자주 만나는 에러
+## 26. 트러블슈팅 — 자주 만나는 에러
 
 > 📂 **볼 파일**: 에러별로 아래 표의 "확인할 곳" 경로를 그대로 열어보면 된다. 리다이렉트
 > 인코딩 문제는 `src/main/java/egovframework/asset/equipment/EquipmentController.java`의
@@ -898,7 +1007,8 @@ try {
 | `Table 'EQUIPMENT'/'users' doesn't exist` | 스키마 미실행 | `src/main/resources/db/asset_schema.sql` 직접 실행 |
 | 새로고침 시 폼 재전송 경고 | 처리 후 `return "뷰이름"`(Forward) 사용 | `return "redirect:...";`로 변경 ([10장](#10-validation과-prg-패턴) PRG 패턴) |
 | 새 공개 페이지가 로그인 화면으로 계속 튕김 | `LoginCheckInterceptor`의 `exclude-mapping`에 경로 추가를 안 함 | `dispatcher-servlet.xml` 확인 ([12장](#12-로그인권한-체크--interceptor로-리팩터링)) |
-| 새 관리자 화면을 일반 사용자도 열 수 있음 | `AdminCheckInterceptor`의 `mvc:mapping`에 새 URL 추가를 깜빡함 | `dispatcher-servlet.xml`의 세 번째 `<mvc:interceptor>` 확인 ([24장](#24-새-관리자-페이지-추가-체크리스트)) |
+| 새 관리자 화면을 일반 사용자도 열 수 있음 | `AdminCheckInterceptor`의 `mvc:mapping`에 새 URL 추가를 깜빡함 | `dispatcher-servlet.xml`의 세 번째 `<mvc:interceptor>` 확인 ([25장](#25-새-관리자-페이지-추가-체크리스트)) |
+| `@Controller`에 넣은 `@Value("${...}")`가 항상 빈 문자열/에러 | Root Context에만 `<context:property-placeholder>`가 있고, `@Controller`가 스캔되는 Servlet(자식) Context엔 없음 | `dispatcher-servlet.xml`에도 `<context:property-placeholder>` 등록 ([4장](#4-두-개의-spring-컨텍스트) 실전 사례 참고) |
 | `Http11Processor.writeHeaders` 경고 + 리다이렉트가 안 먹힘 | `redirect:"...category=" + 한글값`처럼 헤더에 비ASCII 문자를 그대로 붙임 (`Location` 헤더는 ISO-8859-1만 허용) | 아래 상세 참고, `URLEncoder.encode(value, "UTF-8")`로 감싸기 |
 
 **리다이렉트 URL 인코딩 — 실전에서 만난 버그**: 카테고리 이름에 "핸드폰"을 넣고 비품을 등록했더니
@@ -933,10 +1043,10 @@ return "redirect:/equipmentList.do?category=" + encode(equipmentVO.getCategory()
 
 ---
 
-## 26. 알려진 이슈 / 남은 숙제
+## 27. 알려진 이슈 / 남은 숙제
 
 > 📂 **볼 파일**: `src/main/resources/egovframework/spring/context-transaction.xml`(pointcut 값) ·
-> `src/main/java/egovframework/asset/equipment/ReportServiceImpl.java`(`approveReport()`)
+> `src/main/java/egovframework/asset/equipment/ReportServiceImpl.java`(`confirmReport()`, `resolveReport()`, `rejectReport()`)
 
 1. **`context-transaction.xml`의 pointcut이 이 프로젝트를 가리키지 않는다**
    ```xml
@@ -945,9 +1055,10 @@ return "redirect:/equipmentList.do?category=" + encode(equipmentVO.getCategory()
        expression="execution(* egovframework.example.sample..impl.*Impl.*(..))"/>
    <!-- 맞는 값: egovframework.asset..impl.*Impl.*(..) -->
    ```
-   단순 INSERT/UPDATE 한 번짜리는 이 버그가 드러나지 않지만, `ReportServiceImpl.approveReport()`
-   ([22장](#22-신고-승인-흐름--왜-rental_id를-저장해야-했나))처럼 한 메서드 안에서 여러 테이블에
-   걸쳐 작업하는 경우엔 롤백이 안 걸릴 수 있는 실제 위험 지점이다 — 직접 고쳐보면 좋은 연습 문제.
+   단순 INSERT/UPDATE 한 번짜리는 이 버그가 드러나지 않지만, `ReportServiceImpl`의
+   `confirmReport()`/`resolveReport()`/`rejectReport()`([22장](#22-신고-처리-흐름--승인-대신-상태-머신을-쓴-이유))처럼
+   한 메서드 안에서 여러 테이블에 걸쳐 작업하는 경우엔 롤백이 안 걸릴 수 있는 실제 위험 지점이다 —
+   직접 고쳐보면 좋은 연습 문제.
 
 2. **과거 대여 데이터의 상태 불일치** — 게이팅 도입 전에는 대여 요청 즉시 비품이 RENTED로
    바뀌었다. 게이팅 도입 이전에 만들어진 RENTAL 행은 `request_status`가 영원히 `REQUESTED`인 채로
@@ -977,7 +1088,15 @@ user 상태값: P(승인대기) → Y(활성) / R(반려)      Y --탈퇴--> N
 승인 게이팅: 요청 시점엔 상태만 저장(REQUESTED) → 승인 시점에만 실제 효과 반영 → 반려는 상태만 REJECTED
   대여: 승인 시 EQUIPMENT→RENTED (멀티테이블 UPDATE)
   연장: requested_return_date에 임시저장 → 승인 시 return_date로 반영
-  신고: rental_id를 미리 저장해둠 → 승인 시 EQUIPMENT→BROKEN + RENTAL 삭제
+  신고는 이 패턴을 안 따름 (아래 참고)
+
+신고 상태 머신 (승인 게이팅과 다른 예외 케이스): 접수 즉시 EQUIPMENT→BROKEN (승인 기다리지 않음)
+  PENDING(확인중) → CONFIRMED(고장접수, 이때 RENTAL 삭제) → REPAIRING(수리중) → RESOLVED(완료, EQUIPMENT→AVAILABLE)
+  PENDING → REJECTED(반려, EQUIPMENT→RENTED로 복구) — RENTAL을 접수 시점에 안 지웠기 때문에 가능
+  관리자 화면(issueList.do)은 PENDING/CONFIRMED/REPAIRING만 조회 → RESOLVED/REJECTED는 이력으로 남고 목록에서만 제외(소프트 삭제)
+
+정적 리소스 한계: DispatcherServlet이 *.do만 처리 → 웹앱 밖 업로드 폴더는 <mvc:resources>로 못 엶
+  → 컨트롤러가 reportId로 DB에서 경로 조회 후 파일을 직접 읽어 응답에 스트리밍 (경로는 클라이언트에 안 넘김 → path traversal 방지)
 
 카테고리: EQUIPMENT.category_id → CATEGORY.category_id (FK). SQL이 JOIN해서 이름으로 별칭 주므로
           JSP/컨트롤러는 여전히 "이름" 문자열만 다룸. FK가 사용중인 카테고리 삭제를 자동으로 막아줌.
@@ -986,5 +1105,8 @@ user 상태값: P(승인대기) → Y(활성) / R(반려)      Y --탈퇴--> N
 
 리다이렉트에 한글 등 비ASCII 값 붙일 때: URLEncoder.encode(value, "UTF-8") 필수 (Location 헤더는 라틴-1만 허용)
 
-⚠ 고쳐야 할 것: context-transaction.xml pointcut (ReportServiceImpl.approveReport()가 실제 다중 테이블 작업 사례)
+@Controller에서 @Value("${...}") 쓰려면: Root Context(context-datasource.xml)의 property-placeholder로는
+  부족함 — dispatcher-servlet.xml(자식 Context)에도 별도로 <context:property-placeholder> 등록 필요 (4장)
+
+⚠ 고쳐야 할 것: context-transaction.xml pointcut (ReportServiceImpl의 confirmReport/resolveReport/rejectReport가 실제 다중 테이블 작업 사례)
 ```
