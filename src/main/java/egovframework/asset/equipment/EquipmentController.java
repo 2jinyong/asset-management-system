@@ -13,7 +13,6 @@ import javax.servlet.http.HttpSession;
 import egovframework.asset.cmmn.EquipmentPaging;
 import egovframework.asset.cmmn.PageMaker;
 import egovframework.asset.user.service.UserVO;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,9 +28,6 @@ public class EquipmentController {
 	private final EquipmentService equipmentService;
 	private final RentalService rentalService;
 	private final ReportService reportService;
-
-	@Value("${upload.report.dir}")
-	private String uploadDir;
 
 	public EquipmentController(EquipmentService equipmentService, RentalService rentalService,
 			ReportService reportService) {
@@ -261,6 +257,7 @@ public class EquipmentController {
 
 		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 
+		String uploadDir = "C:/asset-uploads/report/";
 		String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
 		String savePath = uploadDir + fileName;
 
