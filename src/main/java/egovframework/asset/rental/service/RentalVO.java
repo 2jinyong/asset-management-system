@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.rental.service;
 public class RentalVO {
 	private Long rentalId;
 	private Long equipmentId;

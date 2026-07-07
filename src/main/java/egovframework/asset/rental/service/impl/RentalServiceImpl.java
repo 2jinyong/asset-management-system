@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.rental.service.impl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -6,6 +6,11 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import egovframework.asset.equipment.service.EquipmentMapper;
+import egovframework.asset.rental.service.RentalMapper;
+import egovframework.asset.rental.service.RentalService;
+import egovframework.asset.rental.service.RentalVO;
 
 @Service
 public class RentalServiceImpl implements RentalService {

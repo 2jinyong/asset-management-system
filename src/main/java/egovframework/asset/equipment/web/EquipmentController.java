@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.equipment.web;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +12,12 @@ import javax.servlet.http.HttpSession;
 
 import egovframework.asset.cmmn.EquipmentPaging;
 import egovframework.asset.cmmn.PageMaker;
+import egovframework.asset.equipment.service.EquipmentService;
+import egovframework.asset.equipment.service.EquipmentVO;
+import egovframework.asset.rental.service.RentalService;
+import egovframework.asset.rental.service.RentalVO;
+import egovframework.asset.report.service.ReportService;
+import egovframework.asset.report.service.ReportVO;
 import egovframework.asset.user.service.UserVO;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;

@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.report.service;
 
 import java.util.List;
 import java.util.Map;
