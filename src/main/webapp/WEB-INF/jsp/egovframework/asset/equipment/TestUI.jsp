@@ -2,6 +2,7 @@
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -233,9 +234,11 @@ body {
 			<c:if test="${sessionScope.loginUser.role == 'USER'}">
 				<div class="avatar">사원</div>
 			</c:if>
-			<span>${sessionScope.loginUser.userName}</span>
-			<a href="<%=request.getContextPath()%>/user/myInfo.do" class="btn btn-mypage">내 정보</a>
-			<a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-logout">로그아웃</a>
+			<span>${sessionScope.loginUser.userName}</span> <a
+				href="<%=request.getContextPath()%>/user/myInfo.do"
+				class="btn btn-mypage">내 정보</a> <a
+				href="<%=request.getContextPath()%>/user/logout.do"
+				class="btn btn-logout">로그아웃</a>
 		</div>
 	</div>
 
@@ -250,26 +253,30 @@ body {
 					<a href="approveList.do" class="menu-card"> <span class="icon">✅</span>
 						<span class="menu-title">승인 관리</span> <span class="menu-desc">대여/반납/연장/신고
 							요청 승인</span>
-					</a> <a href="user/pendingList.do" class="menu-card"> <span
+					</a>
+					<a href="user/pendingList.do" class="menu-card"> <span
 						class="icon">🧑‍💼</span> <span class="menu-title">가입 승인</span> <span
 						class="menu-desc">신규 가입 신청 승인/반려</span>
 					</a>
-					<a href="equipmentList.do" class="menu-card">
-						<span class="menu-title">비품 관리</span>
-						<span class="menu-desc">비품 등록/수정/삭제</span>
+					<a href="equipmentList.do" class="menu-card"> <span
+						class="menu-title">비품 관리</span> <span class="menu-desc">비품
+							등록/수정/삭제</span>
 					</a>
 				</c:when>
 				<c:otherwise>
-					<a href="rentalRequest.do" class="menu-card"> <span class="icon">📋</span>
-						<span class="menu-title">대여 요청</span> <span class="menu-desc">비품
-							선택 후 신청</span>
-					</a> <a href="returnQr.do" class="menu-card"> <span class="icon">📷</span>
+					<a href="rentalRequest.do" class="menu-card"> <span
+						class="icon">📋</span> <span class="menu-title">대여 요청</span> <span
+						class="menu-desc">비품 선택 후 신청</span>
+					</a>
+					<a href="returnQr.do" class="menu-card"> <span class="icon">📷</span>
 						<span class="menu-title">반납 처리</span> <span class="menu-desc">QR
 							스캔으로 반납</span>
-					</a> <a href="extendRequest.do" class="menu-card"> <span class="icon">📅</span>
-						<span class="menu-title">연장 요청</span> <span class="menu-desc">대여
-							기간 연장 신청</span>
-					</a> <a href="reportIssue.do" class="menu-card"> <span class="icon">🚨</span>
+					</a>
+					<a href="extendRequest.do" class="menu-card"> <span
+						class="icon">📅</span> <span class="menu-title">연장 요청</span> <span
+						class="menu-desc">대여 기간 연장 신청</span>
+					</a>
+					<a href="reportIssue.do" class="menu-card"> <span class="icon">🚨</span>
 						<span class="menu-title">문제 신고</span> <span class="menu-desc">이상
 							상태 신고 및 사진 첨부</span>
 					</a>
@@ -305,58 +312,58 @@ body {
 
 		<!-- 내 대여 현황 (관리자는 대여를 하지 않으므로 USER에게만 노출) -->
 		<c:if test="${sessionScope.loginUser.role == 'USER'}">
-		<p class="section-title">내 대여 현황</p>
-		<table class="rental-table">
-			<thead>
-				<tr>
-					<th>비품명</th>
-					<th>대여일</th>
-					<th>반납 예정일</th>
-					<th>상태</th>
-					<th>액션</th>
-				</tr>
-			</thead>
-			<tbody>
-				<c:choose>
-					<c:when test="${empty myRentalList}">
-						<tr>
-							<td colspan="5" style="text-align: center; color: #aaa;">대여
-								중인 비품이 없습니다.</td>
-						</tr>
-					</c:when>
-					<c:otherwise>
-						<c:forEach var="rental" items="${myRentalList}">
+			<p class="section-title">내 대여 현황</p>
+			<table class="rental-table">
+				<thead>
+					<tr>
+						<th>비품명</th>
+						<th>대여일</th>
+						<th>반납 예정일</th>
+						<th>상태</th>
+						<th>액션</th>
+					</tr>
+				</thead>
+				<tbody>
+					<c:choose>
+						<c:when test="${empty myRentalList}">
 							<tr>
-								<td>${rental.equipmentName}</td>
-								<td>${rental.rentalDate}</td>
-								<td>${rental.returnDate}</td>
-								<td><c:choose>
-										<c:when test="${rental.requestStatus == 'REQUESTED'}">
-											<span class="badge using">승인 요청</span>
-										</c:when>
-										<c:when test="${rental.requestStatus == 'APPROVED'}">
-											<span class="badge done">대여 중</span>
-										</c:when>
-										<c:when test="${rental.requestStatus == 'REJECTED'}">
-											<span class="badge due">반려</span>
-										</c:when>
-									</c:choose></td>
-								<td>
-									<div class="btn-group">
-										<a href="returnQr.do?equipmentId=${rental.equipmentId}"
-											class="btn btn-return">반납</a> <a
-											href="extendRequest.do?equipmentId=${rental.equipmentId}"
-											class="btn btn-extend">연장</a> <a
-											href="reportIssue.do?equipmentId=${rental.equipmentId}"
-											class="btn btn-report">신고</a>
-									</div>
-								</td>
+								<td colspan="5" style="text-align: center; color: #aaa;">대여
+									중인 비품이 없습니다.</td>
 							</tr>
-						</c:forEach>
-					</c:otherwise>
-				</c:choose>
-			</tbody>
-		</table>
+						</c:when>
+						<c:otherwise>
+							<c:forEach var="rental" items="${myRentalList}">
+								<tr>
+									<td>${rental.equipmentName}</td>
+									<td>${fn:substring(rental.rentalDate, 0, 10)}</td>
+									<td>${fn:substring(rental.returnDate, 0, 10)}</td>
+									<td><c:choose>
+											<c:when test="${rental.requestStatus == 'REQUESTED'}">
+												<span class="badge using">승인 요청</span>
+											</c:when>
+											<c:when test="${rental.requestStatus == 'APPROVED'}">
+												<span class="badge done">대여 중</span>
+											</c:when>
+											<c:when test="${rental.requestStatus == 'REJECTED'}">
+												<span class="badge due">반려</span>
+											</c:when>
+										</c:choose></td>
+									<td>
+										<div class="btn-group">
+											<a href="returnQr.do?equipmentId=${rental.equipmentId}"
+												class="btn btn-return">반납</a> <a
+												href="extendRequest.do?equipmentId=${rental.equipmentId}"
+												class="btn btn-extend">연장</a> <a
+												href="reportIssue.do?equipmentId=${rental.equipmentId}"
+												class="btn btn-report">신고</a>
+										</div>
+									</td>
+								</tr>
+							</c:forEach>
+						</c:otherwise>
+					</c:choose>
+				</tbody>
+			</table>
 		</c:if>
 
 	</div>
