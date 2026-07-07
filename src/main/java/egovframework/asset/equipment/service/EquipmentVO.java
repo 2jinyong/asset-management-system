@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.equipment.service;
 
 import lombok.Getter;
 import lombok.Setter;

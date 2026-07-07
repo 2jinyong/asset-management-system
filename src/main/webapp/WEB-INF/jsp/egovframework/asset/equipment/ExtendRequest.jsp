@@ -55,6 +55,12 @@
 <script>
 let rentals = [];
 
+function formatDate(arr) {
+  if (!arr) return '';
+  const [y, m, d] = arr;
+  return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+
 function loadMyRentals() {
   fetch('myRentalList.do')
     .then(res => res.json())
@@ -69,7 +75,7 @@ function loadMyRentals() {
       data.forEach((r, idx) => {
         const opt = document.createElement('option');
         opt.value = idx;
-        opt.textContent = r.equipmentName + ' (반납예정 ' + r.returnDate + ')';
+        opt.textContent = r.equipmentName + ' (반납예정 ' + formatDate(r.returnDate) + ')';
         sel.appendChild(opt);
       });
 
@@ -92,7 +98,7 @@ function showCurrent() {
   if (idx !== '') {
     const r = rentals[idx];
     document.getElementById('curModel').textContent = r.equipmentName;
-    document.getElementById('curDue').textContent = r.returnDate;
+    document.getElementById('curDue').textContent = formatDate(r.returnDate);
     info.classList.remove('d-none');
   } else {
     info.classList.add('d-none');
@@ -108,6 +114,12 @@ function submitExtend() {
   if (!newDate) { alert('연장 반납 예정일을 선택하세요.'); return; }
 
   const r = rentals[idx];
+  const currentDue = formatDate(r.returnDate);
+
+  if (newDate <= currentDue) {
+    alert('연장 날짜는 현재 반납 예정일(' + currentDue + ')보다 이후여야 합니다.');
+    return;
+  }
 
   fetch('extendRequest.do', {
     method: 'POST',

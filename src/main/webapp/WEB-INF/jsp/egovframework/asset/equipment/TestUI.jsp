@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -141,8 +142,8 @@
 								<c:forEach var="rental" items="${myRentalList}">
 									<tr>
 										<td>${rental.equipmentName}</td>
-										<td>${rental.rentalDate}</td>
-										<td>${rental.returnDate}</td>
+										<td>${fn:substring(rental.rentalDate, 0, 10)}</td>
+										<td>${fn:substring(rental.returnDate, 0, 10)}</td>
 										<td><c:choose>
 												<c:when test="${rental.requestStatus == 'REQUESTED'}">
 													<span class="badge rounded-pill badge-soft-warning">승인 요청</span>

@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.report.service;
 
 public class ReportVO {
     private Long rentalId;
