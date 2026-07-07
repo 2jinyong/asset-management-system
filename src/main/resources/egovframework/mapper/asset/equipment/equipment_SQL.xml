@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="egovframework.asset.equipment.EquipmentMapper">
+<mapper namespace="egovframework.asset.equipment.service.EquipmentMapper">
 	<!--
 		EQUIPMENT.category_id 는 CATEGORY(category_id, category_name) 를 참조하는 FK.
 		화면/컨트롤러는 예전처럼 카테고리 "이름" 문자열만 주고받으면 되도록,
@@ -9,7 +9,7 @@
 		등록/수정 시에는 전달받은 카테고리 이름으로 CATEGORY 를 조인해 category_id 를 찾아 저장한다.
 	-->
 	<select id="selectEquipmentList" parameterType="map"
-		resultType="egovframework.asset.equipment.EquipmentVO">
+		resultType="egovframework.asset.equipment.service.EquipmentVO">
 		SELECT e.equipment_id, e.equipment_name, c.category_name AS category,
 		e.status, e.qr_image_path, e.created_at
 		FROM EQUIPMENT e
@@ -92,7 +92,7 @@
 
 	<!-- 비품 등록/수정/삭제 (관리자 전용) -->
 	<select id="selectEquipmentById" parameterType="long"
-		resultType="egovframework.asset.equipment.EquipmentVO">
+		resultType="egovframework.asset.equipment.service.EquipmentVO">
 		SELECT e.equipment_id, e.equipment_name, c.category_name AS category,
 		e.status, e.qr_image_path, e.created_at, e.updated_at
 		FROM EQUIPMENT e
@@ -100,14 +100,14 @@
 		WHERE e.equipment_id = #{equipmentId}
 	</select>
 	<insert id="insertEquipment"
-		parameterType="egovframework.asset.equipment.EquipmentVO">
+		parameterType="egovframework.asset.equipment.service.EquipmentVO">
 		INSERT INTO EQUIPMENT (equipment_name, category_id, status, created_at)
 		SELECT #{equipmentName}, category_id, 'AVAILABLE', NOW()
 		FROM CATEGORY
 		WHERE category_name = #{category}
 	</insert>
 	<update id="updateEquipment"
-		parameterType="egovframework.asset.equipment.EquipmentVO">
+		parameterType="egovframework.asset.equipment.service.EquipmentVO">
 		UPDATE EQUIPMENT e
 		JOIN CATEGORY c ON c.category_name = #{category}
 		SET e.equipment_name = #{equipmentName},

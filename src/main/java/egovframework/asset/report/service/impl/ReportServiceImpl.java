@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.report.service.impl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -6,6 +6,11 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import egovframework.asset.rental.service.RentalMapper;
+import egovframework.asset.report.service.ReportMapper;
+import egovframework.asset.report.service.ReportService;
+import egovframework.asset.report.service.ReportVO;
 
 @Service
 public class ReportServiceImpl implements ReportService {

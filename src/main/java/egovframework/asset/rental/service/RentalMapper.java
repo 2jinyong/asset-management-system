@@ -1,4 +1,4 @@
-package egovframework.asset.equipment;
+package egovframework.asset.rental.service;
 import java.util.List;
 import java.util.Map;
 import org.egovframe.rte.psl.dataaccess.mapper.Mapper;

@@ -1,8 +1,13 @@
-package egovframework.asset.equipment;
+package egovframework.asset.equipment.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+
+import egovframework.asset.equipment.service.EquipmentMapper;
+import egovframework.asset.equipment.service.EquipmentService;
+import egovframework.asset.equipment.service.EquipmentVO;
+
 @Service
 public class EquipmentServiceImpl implements EquipmentService {
     private final EquipmentMapper equipmentMapper;
