@@ -43,7 +43,17 @@
         <tr>
           <td>${item.applicant}</td>
           <td>${item.itemName}</td>
-          <td>${item.issueType}</td>
+          <td>
+            <c:choose>
+              <c:when test="${item.issueType == 'BROKEN'}">파손</c:when>
+              <c:when test="${item.issueType == 'MALFUNCTION'}">작동 불량</c:when>
+              <c:when test="${item.issueType == 'BATTERY'}">배터리 문제</c:when>
+              <c:when test="${item.issueType == 'SCREEN'}">화면 이상</c:when>
+              <c:when test="${item.issueType == 'CONNECTION'}">연결 문제</c:when>
+              <c:when test="${item.issueType == 'ETC'}">기타</c:when>
+              <c:otherwise>${item.issueType}</c:otherwise>
+            </c:choose>
+          </td>
           <td>${item.content}</td>
           <td>
             <c:choose>

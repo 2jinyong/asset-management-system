@@ -140,6 +140,10 @@ body {
   opacity: .85;
 }
 
+.row-clickable {
+  cursor: pointer;
+}
+
 .section-divider {
   text-align: center;
   color: #adb5bd;
