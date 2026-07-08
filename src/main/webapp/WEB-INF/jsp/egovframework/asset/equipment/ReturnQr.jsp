@@ -17,7 +17,7 @@
       <c:if test="${sessionScope.loginUser.role == 'USER'}">
         <div class="avatar-circle">사원</div>
       </c:if>
-      <span class="small text-secondary me-1">${sessionScope.loginUser.userName}</span>
+      <span class="small text-secondary me-1">${sessionScope.loginUser.userName} 님</span>
       <a href="<%=request.getContextPath()%>/user/myInfo.do" class="btn btn-sm btn-outline-primary">내 정보</a>
       <a href="<%=request.getContextPath()%>/user/logout.do" class="btn btn-sm btn-outline-secondary">로그아웃</a>
     </div>
