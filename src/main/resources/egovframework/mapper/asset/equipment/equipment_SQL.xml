@@ -120,6 +120,11 @@
 		DELETE FROM EQUIPMENT
 		WHERE equipment_id = #{equipmentId}
 	</delete>
+	<update id="updateQrImagePath" parameterType="map">
+		UPDATE EQUIPMENT
+		SET qr_image_path = #{qrImagePath}
+		WHERE equipment_id = #{equipmentId}
+	</update>
 
 	<!-- 카테고리 마스터 (관리자 전용) -->
 	<select id="selectAllCategoryNames" resultType="string">

@@ -7,15 +7,19 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import egovframework.asset.cmmn.EquipmentPaging;
 import egovframework.asset.cmmn.PageMaker;
+import egovframework.asset.cmmn.QrCodeUtil;
 import egovframework.asset.equipment.service.EquipmentService;
 import egovframework.asset.equipment.service.EquipmentVO;
 import egovframework.asset.rental.service.RentalService;
@@ -39,6 +43,9 @@ public class EquipmentController {
 
 	@Value("${upload.report.dir}")
 	private String reportUploadDir;
+
+	@Value("${upload.qr.dir}")
+	private String qrUploadDir;
 
 	private final EquipmentService equipmentService;
 	private final RentalService rentalService;
@@ -171,6 +178,67 @@ public class EquipmentController {
 			return "redirect:/equipmentList.do?category=" + encode(category) + "&error=hasHistory";
 		}
 		return "redirect:/equipmentList.do?category=" + encode(category);
+	}
+
+	@PostMapping("/qrGenerate.do")
+	public String qrGenerate(@RequestParam("equipmentIds") List<Long> equipmentIds, HttpServletRequest request) {
+		String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort()
+				+ request.getContextPath();
+
+		File dir = new File(qrUploadDir);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+
+		for (Long equipmentId : equipmentIds) {
+			String content = baseUrl + "/returnQr.do?equipmentId=" + equipmentId;
+			String fileName = "EQ_" + equipmentId + ".png";
+			try {
+				byte[] png = QrCodeUtil.generatePng(content);
+				FileCopyUtils.copy(png, new File(dir, fileName));
+			} catch (Exception e) {
+				throw new RuntimeException("QR 코드 생성 실패: equipmentId=" + equipmentId, e);
+			}
+			equipmentService.updateQrImagePath(equipmentId, fileName);
+		}
+
+		String ids = equipmentIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+		return "redirect:/qrPrint.do?equipmentIds=" + ids;
+	}
+
+	@RequestMapping(value = "/qrPrint.do", method = RequestMethod.GET)
+	public String qrPrint(@RequestParam("equipmentIds") String equipmentIds, ModelMap model) {
+		List<EquipmentVO> list = new ArrayList<>();
+		for (String idStr : equipmentIds.split(",")) {
+			if (idStr.trim().isEmpty()) {
+				continue;
+			}
+			list.add(equipmentService.getEquipmentById(Long.parseLong(idStr.trim())));
+		}
+		model.addAttribute("equipmentList", list);
+		return "/admin/QrPrint";
+	}
+
+	@RequestMapping(value = "/qrImage.do", method = RequestMethod.GET)
+	public void qrImage(@RequestParam("equipmentId") Long equipmentId, HttpServletResponse response) throws IOException {
+		EquipmentVO equipmentVO = equipmentService.getEquipmentById(equipmentId);
+		String qrImagePath = equipmentVO != null ? equipmentVO.getQrImagePath() : null;
+		if (qrImagePath == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		File uploadDir = new File(qrUploadDir).getCanonicalFile();
+		File file = new File(uploadDir, new File(qrImagePath).getName()).getCanonicalFile();
+		if (!file.getPath().startsWith(uploadDir.getPath() + File.separator) || !file.isFile()) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		response.setContentType("image/png");
+		try (InputStream in = new FileInputStream(file)) {
+			FileCopyUtils.copy(in, response.getOutputStream());
+		}
 	}
 
 	private String encode(String value) {

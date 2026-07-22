@@ -34,8 +34,13 @@
 			<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
 				<a href="categoryList.do" class="btn btn-sm btn-outline-primary">카테고리 관리</a>
 				<a href="equipmentForm.do" class="btn btn-sm btn-brand">비품 등록</a>
+				<button type="submit" form="qrForm" class="btn btn-sm btn-outline-success">선택 QR 발급</button>
 			</c:if>
 		</div>
+
+		<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+			<form id="qrForm" method="post" action="qrGenerate.do"></form>
+		</c:if>
 
 		<c:if test="${param.error == 'hasHistory'}">
 			<div class="alert alert-danger py-2 px-3 small fw-bold">대여 이력이 있는 비품은 삭제할 수 없습니다.</div>
@@ -45,6 +50,9 @@
 			<table class="table table-asset table-hover mb-0">
 				<thead>
 					<tr>
+						<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+							<th><input type="checkbox" onclick="toggleAllQrCheckboxes(this)"></th>
+						</c:if>
 						<th>번호</th>
 						<th>비품명</th>
 						<th>카테고리</th>
@@ -58,12 +66,15 @@
 					<c:choose>
 						<c:when test="${empty equipmentList}">
 							<tr>
-								<td colspan="5" class="text-center text-secondary py-5">해당 카테고리의 비품이 없습니다.</td>
+								<td colspan="6" class="text-center text-secondary py-5">해당 카테고리의 비품이 없습니다.</td>
 							</tr>
 						</c:when>
 						<c:otherwise>
 							<c:forEach var="item" items="${equipmentList}" varStatus="status">
 								<tr>
+									<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+										<td><input type="checkbox" name="equipmentIds" form="qrForm" value="${item.equipmentId}"></td>
+									</c:if>
 									<td>${(pageMaker.paging.page - 1) * pageMaker.paging.perPageNum + status.index + 1}</td>
 									<td>${item.equipmentName}</td>
 									<td>${item.category}</td>
@@ -118,5 +129,22 @@
 		</nav>
 
 	</div>
+
+	<c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+		<script>
+			function toggleAllQrCheckboxes(checkbox) {
+				document.querySelectorAll('input[name="equipmentIds"]').forEach(function(cb) {
+					cb.checked = checkbox.checked;
+				});
+			}
+			document.getElementById('qrForm').addEventListener('submit', function(e) {
+				var checked = document.querySelectorAll('input[name="equipmentIds"]:checked');
+				if (checked.length === 0) {
+					e.preventDefault();
+					alert('QR을 발급할 비품을 선택하세요.');
+				}
+			});
+		</script>
+	</c:if>
 </body>
 </html>

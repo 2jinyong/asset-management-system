@@ -207,6 +207,18 @@
 			<artifactId>spring-security-crypto</artifactId>
 			<version>5.8.13</version>
 		</dependency>
+
+		<!-- QR 코드 생성용 -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.5.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>

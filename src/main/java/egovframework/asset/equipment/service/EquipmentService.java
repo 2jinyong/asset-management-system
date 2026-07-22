@@ -15,6 +15,7 @@ public interface EquipmentService {
     void registerEquipment(EquipmentVO equipmentVO);
     void updateEquipment(EquipmentVO equipmentVO);
     void deleteEquipment(Long equipmentId);
+    void updateQrImagePath(Long equipmentId, String qrImagePath);
 
     // 카테고리 마스터 (관리자 전용)
     List<String> getAllCategoryNames();
