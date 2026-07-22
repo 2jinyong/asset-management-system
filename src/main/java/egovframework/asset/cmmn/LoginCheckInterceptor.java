@@ -26,6 +26,16 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
         UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 
         if (loginUser == null) {
+            // GET 요청이었던 원래 목적지를 세션에 저장해두면, 로그인 성공 후 UserController#login()이
+            // main.do 대신 이 URL로 돌려보낸다. POST는 그대로 재생(redirect)하면 GET으로 바뀌어
+            // 의미가 달라지므로(405 등) 저장 대상에서 제외한다.
+            if ("GET".equalsIgnoreCase(request.getMethod())) {
+                String requestUri = request.getRequestURI().substring(request.getContextPath().length());
+                String queryString = request.getQueryString();
+                String redirectUrl = (queryString != null) ? requestUri + "?" + queryString : requestUri;
+                session.setAttribute("loginRedirectUrl", redirectUrl);
+            }
+
             response.sendRedirect(request.getContextPath() + "/user/loginView.do");
             return false;
         }

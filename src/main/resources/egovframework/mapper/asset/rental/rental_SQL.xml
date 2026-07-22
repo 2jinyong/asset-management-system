@@ -21,6 +21,7 @@
             r.rental_id AS rentalId,
             r.equipment_id AS equipmentId,
             e.equipment_name AS equipmentName,
+            r.user_id AS userId,
             u.user_name AS userName,
             r.rental_date AS rentalDate,
             r.return_date AS returnDate
