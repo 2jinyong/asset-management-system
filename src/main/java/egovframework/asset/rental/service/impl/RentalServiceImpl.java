@@ -71,8 +71,8 @@ public class RentalServiceImpl implements RentalService {
     @Override
     @Transactional
     public void processReturn(Long rentalId, Long equipmentId) {
-        int deleted = rentalMapper.deleteRental(rentalId);
-        if (deleted == 0) {
+        int updated = rentalMapper.markRentalReturned(rentalId);
+        if (updated == 0) {
             throw new IllegalStateException("반납 처리할 대여 건을 찾을 수 없습니다.");
         }
 

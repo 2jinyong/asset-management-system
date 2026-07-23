@@ -7,7 +7,8 @@ public interface RentalMapper {
     int insertRental(RentalVO rentalVO);
     int updateEquipmentStatus(Map<String, Object> params);
     Map<String, Object> selectRentalByEquipmentId(Long equipmentId);
-    int deleteRental(Long rentalId);
+    int markRentalReturned(Long rentalId);
+    int markRentalClosed(Long rentalId);
 
     List<Map<String, Object>> selectPendingRentals();
     int approveRental(Long rentalId);

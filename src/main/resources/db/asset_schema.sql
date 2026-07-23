@@ -68,7 +68,7 @@ CREATE TABLE `RENTAL` (
   `user_id` bigint NOT NULL,
   `quantity` int DEFAULT '1',
   `purpose` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `request_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REQUESTED' COMMENT '대여 요청 상태: REQUESTED(승인대기) / APPROVED(승인) / REJECTED(반려)',
+  `request_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'REQUESTED' COMMENT '대여 요청 상태: REQUESTED(승인대기) / APPROVED(승인) / REJECTED(반려) / RETURNED(반납완료) / CLOSED(신고로 종료)',
   `rental_date` datetime DEFAULT NULL,
   `return_date` datetime DEFAULT NULL,
   `actual_return_date` datetime DEFAULT NULL,
