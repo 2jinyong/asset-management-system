@@ -59,6 +59,7 @@
 		FROM RENTAL r
 		JOIN EQUIPMENT e ON r.equipment_id = e.equipment_id
 		WHERE r.user_id = #{userId}
+		AND r.request_status NOT IN ('RETURNED', 'CLOSED')
 		ORDER BY r.rental_id DESC
 	</select>
 	<!-- 변경된 부분: 모델별로 그룹핑, 재고 수량 포함 -->
