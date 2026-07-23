@@ -7,15 +7,19 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import egovframework.asset.cmmn.EquipmentPaging;
 import egovframework.asset.cmmn.PageMaker;
+import egovframework.asset.cmmn.QrCodeUtil;
 import egovframework.asset.equipment.service.EquipmentService;
 import egovframework.asset.equipment.service.EquipmentVO;
 import egovframework.asset.rental.service.RentalService;
@@ -40,6 +44,9 @@ public class EquipmentController {
 	@Value("${upload.report.dir}")
 	private String reportUploadDir;
 
+	@Value("${upload.qr.dir}")
+	private String qrUploadDir;
+
 	private final EquipmentService equipmentService;
 	private final RentalService rentalService;
 	private final ReportService reportService;
@@ -52,9 +59,11 @@ public class EquipmentController {
 	}
 
 	@RequestMapping("/main.do")
-	public String mainPage(ModelMap model, HttpSession session) {
+	public String mainPage(@RequestParam(value = "qrError", required = false) String qrError, ModelMap model,
+			HttpSession session) {
 		List<Map<String, Object>> categorySummary = equipmentService.getCategorySummary();
 		model.addAttribute("categorySummary", categorySummary);
+		model.addAttribute("qrError", qrError);
 		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
 		if (loginUser != null && "USER".equals(loginUser.getRole())) {
 			List<Map<String, Object>> myRentalList = equipmentService.getMyRentalList(loginUser.getUserId());
@@ -173,6 +182,67 @@ public class EquipmentController {
 		return "redirect:/equipmentList.do?category=" + encode(category);
 	}
 
+	@PostMapping("/qrGenerate.do")
+	public String qrGenerate(@RequestParam("equipmentIds") List<Long> equipmentIds, HttpServletRequest request) {
+		String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort()
+				+ request.getContextPath();
+
+		File dir = new File(qrUploadDir);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+
+		for (Long equipmentId : equipmentIds) {
+			String content = baseUrl + "/returnQr.do?equipmentId=" + equipmentId;
+			String fileName = "EQ_" + equipmentId + ".png";
+			try {
+				byte[] png = QrCodeUtil.generatePng(content);
+				FileCopyUtils.copy(png, new File(dir, fileName));
+			} catch (Exception e) {
+				throw new RuntimeException("QR 코드 생성 실패: equipmentId=" + equipmentId, e);
+			}
+			equipmentService.updateQrImagePath(equipmentId, fileName);
+		}
+
+		String ids = equipmentIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+		return "redirect:/qrPrint.do?equipmentIds=" + ids;
+	}
+
+	@RequestMapping(value = "/qrPrint.do", method = RequestMethod.GET)
+	public String qrPrint(@RequestParam("equipmentIds") String equipmentIds, ModelMap model) {
+		List<EquipmentVO> list = new ArrayList<>();
+		for (String idStr : equipmentIds.split(",")) {
+			if (idStr.trim().isEmpty()) {
+				continue;
+			}
+			list.add(equipmentService.getEquipmentById(Long.parseLong(idStr.trim())));
+		}
+		model.addAttribute("equipmentList", list);
+		return "/admin/QrPrint";
+	}
+
+	@RequestMapping(value = "/qrImage.do", method = RequestMethod.GET)
+	public void qrImage(@RequestParam("equipmentId") Long equipmentId, HttpServletResponse response) throws IOException {
+		EquipmentVO equipmentVO = equipmentService.getEquipmentById(equipmentId);
+		String qrImagePath = equipmentVO != null ? equipmentVO.getQrImagePath() : null;
+		if (qrImagePath == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		File uploadDir = new File(qrUploadDir).getCanonicalFile();
+		File file = new File(uploadDir, new File(qrImagePath).getName()).getCanonicalFile();
+		if (!file.getPath().startsWith(uploadDir.getPath() + File.separator) || !file.isFile()) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+
+		response.setContentType("image/png");
+		try (InputStream in = new FileInputStream(file)) {
+			FileCopyUtils.copy(in, response.getOutputStream());
+		}
+	}
+
 	private String encode(String value) {
 		if (value == null) {
 			return "";
@@ -208,8 +278,19 @@ public class EquipmentController {
 	}
 
 	@RequestMapping(value = "/rentalRequest.do", method = RequestMethod.GET)
-	public String rentalRequestView(ModelMap model) {
+	public String rentalRequestView(@RequestParam(value = "equipmentId", required = false) Long equipmentId,
+			ModelMap model) {
 		model.addAttribute("categoryList", equipmentService.getAllCategoryNames());
+
+		// QR로 특정 비품(대여가능 상태)을 스캔해 들어온 경우, 그 비품의 종류/이름을 미리 선택해둔다.
+		// equipmentId가 없으면(기존처럼 메뉴에서 직접 진입) 기존 수동 선택 방식 그대로 동작한다.
+		if (equipmentId != null) {
+			EquipmentVO equipmentVO = equipmentService.getEquipmentById(equipmentId);
+			if (equipmentVO != null) {
+				model.addAttribute("preselectCategory", equipmentVO.getCategory());
+				model.addAttribute("preselectEquipmentName", equipmentVO.getEquipmentName());
+			}
+		}
 		return "/equipment/RentalRequest";
 	}
 
@@ -221,9 +302,66 @@ public class EquipmentController {
 		return "redirect:/main.do";
 	}
 
+	/**
+	 * [QR 진입점] 인쇄된 QR 코드({@code /returnQr.do?equipmentId=..})가 가리키는 URL.
+	 * dispatcher-servlet.xml에서 LoginCheckInterceptor 적용 대상에서 제외되어 있어, 로그인 여부와
+	 * 무관하게 이 메서드가 먼저 실행된다 (신고접수 비품은 로그인 체크 자체를 하지 않기 위함).
+	 *
+	 * equipmentId가 없으면(메인 메뉴의 "반납 처리" 카드 등 기존 진입) 예전처럼 수동 스캔/입력 화면을 보여준다.
+	 */
 	@RequestMapping(value = "/returnQr.do", method = RequestMethod.GET)
-	public String returnQr() {
+	public String returnQr(@RequestParam(value = "equipmentId", required = false) Long equipmentId) {
+		if (equipmentId == null) {
+			return "/equipment/ReturnQr";
+		}
+
+		EquipmentVO equipmentVO = equipmentService.getEquipmentById(equipmentId);
+		if (equipmentVO == null) {
+			return "redirect:/main.do?qrError=notfound";
+		}
+
+		String status = equipmentVO.getStatus();
+		if ("BROKEN".equals(status)) {
+			// 신고접수(사용불가) 비품: 로그인 여부와 상관없이 바로 안내 후 메인으로.
+			return "redirect:/main.do?qrError=broken";
+		}
+		if ("RENTED".equals(status)) {
+			// 대여중 비품: 로그인이 필요하므로 LoginCheckInterceptor가 보호하는 선택 화면으로 넘긴다.
+			// 로그인이 안 되어 있으면 인터셉터가 이 URL을 저장해뒀다가 로그인 후 자동으로 되돌아온다.
+			// 실제 대여자 본인인지 확인은 로그인이 보장된 qrSelect.do에서 수행한다.
+			return "redirect:/qrSelect.do?equipmentId=" + equipmentId;
+		}
+		// AVAILABLE: 대여요청 화면으로. 마찬가지로 로그인 자동복귀 패턴이 그대로 적용된다.
+		return "redirect:/rentalRequest.do?equipmentId=" + equipmentId;
+	}
+
+	/**
+	 * [반납 처리 화면] QR 선택 화면에서 "반납" 버튼을 눌렀을 때 실제로 반납을 진행하는 화면.
+	 * equipmentId가 있으면 ReturnQr.jsp가 자동으로 해당 비품을 조회해서 채워준다.
+	 */
+	@RequestMapping(value = "/returnView.do", method = RequestMethod.GET)
+	public String returnView() {
 		return "/equipment/ReturnQr";
+	}
+
+	/**
+	 * [QR 선택 화면] 대여중인 비품 QR을 스캔해 로그인까지 마친 사용자에게 반납/연장/신고 중
+	 * 무엇을 할지 고르게 하는 화면. LoginCheckInterceptor가 이미 로그인을 보장했으므로,
+	 * 여기서는 "로그인한 사람 == 실제 대여자" 인지만 검사한다.
+	 */
+	@RequestMapping(value = "/qrSelect.do", method = RequestMethod.GET)
+	public String qrSelect(@RequestParam("equipmentId") Long equipmentId, HttpSession session, ModelMap model) {
+		UserVO loginUser = (UserVO) session.getAttribute("loginUser");
+
+		Map<String, Object> rental = rentalService.findRentalByEquipmentId(equipmentId);
+		Object renterId = (rental != null) ? rental.get("userId") : null;
+
+		if (renterId == null || !String.valueOf(renterId).equals(String.valueOf(loginUser.getUserId()))) {
+			return "redirect:/main.do?qrError=otherUser";
+		}
+
+		model.addAttribute("equipmentId", equipmentId);
+		return "/equipment/QrSelect";
 	}
 
 	@RequestMapping(value = "/returnSearch.do", method = RequestMethod.GET)

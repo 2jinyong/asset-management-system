@@ -29,6 +29,16 @@
 
 	<div class="container py-4">
 
+		<c:if test="${qrError == 'broken'}">
+			<div class="alert alert-danger py-2 px-3 small fw-bold">신고가 접수되어 사용이 불가한 비품입니다.</div>
+		</c:if>
+		<c:if test="${qrError == 'otherUser'}">
+			<div class="alert alert-warning py-2 px-3 small fw-bold">다른 사용자가 대여중인 비품입니다.</div>
+		</c:if>
+		<c:if test="${qrError == 'notfound'}">
+			<div class="alert alert-secondary py-2 px-3 small fw-bold">존재하지 않는 비품입니다.</div>
+		</c:if>
+
 		<h1 class="h4 fw-bold mb-3">비품 현황</h1>
 
 		<!-- 메뉴 -->
@@ -157,7 +167,7 @@
 											</c:choose></td>
 										<td>
 											<div class="d-flex gap-1">
-												<a href="returnQr.do?equipmentId=${rental.equipmentId}"
+												<a href="returnView.do?equipmentId=${rental.equipmentId}"
 													class="btn btn-sm badge-soft-primary">반납</a>
 												<a href="extendRequest.do?equipmentId=${rental.equipmentId}"
 													class="btn btn-sm badge-soft-warning">연장</a>

@@ -63,6 +63,7 @@
             <mvc:exclude-mapping path="/user/login.do"/>
             <mvc:exclude-mapping path="/user/registerView.do"/>
             <mvc:exclude-mapping path="/user/register.do"/>
+            <mvc:exclude-mapping path="/returnQr.do"/>
             <bean class="egovframework.asset.cmmn.LoginCheckInterceptor"/>
         </mvc:interceptor>
 
@@ -89,6 +90,9 @@
             <mvc:mapping path="/categoryRegister.do"/>
             <mvc:mapping path="/categoryUpdate.do"/>
             <mvc:mapping path="/categoryDelete.do"/>
+            <mvc:mapping path="/qrGenerate.do"/>
+            <mvc:mapping path="/qrPrint.do"/>
+            <mvc:mapping path="/qrImage.do"/>
             <bean class="egovframework.asset.cmmn.AdminCheckInterceptor"/>
         </mvc:interceptor>
     </mvc:interceptors>

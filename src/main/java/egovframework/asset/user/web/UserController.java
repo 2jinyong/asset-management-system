@@ -86,6 +86,14 @@ public class UserController {
 
         if (loginUser != null) {
             session.setAttribute("loginUser", loginUser);  // 세션에 로그인 정보 저장
+
+            // LoginCheckInterceptor가 로그인 전 원래 목적지(GET)를 저장해뒀다면 그곳으로,
+            // 없으면(직접 로그인 화면으로 들어온 경우) 기존대로 메인으로 이동한다.
+            Object redirectUrl = session.getAttribute("loginRedirectUrl");
+            session.removeAttribute("loginRedirectUrl");
+            if (redirectUrl != null) {
+                return "redirect:" + redirectUrl;
+            }
             return "redirect:/main.do";                // PRG 패턴
         } else {
             // 로그인 실패 시, 아이디/비번이 틀린 게 아니라 계정 상태 때문에 못 들어오는 것인지 확인해서 안내

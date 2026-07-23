@@ -64,6 +64,17 @@ public class EquipmentServiceImpl implements EquipmentService {
     }
 
     @Override
+    public void updateQrImagePath(Long equipmentId, String qrImagePath) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("equipmentId", equipmentId);
+        params.put("qrImagePath", qrImagePath);
+        int updated = equipmentMapper.updateQrImagePath(params);
+        if (updated == 0) {
+            throw new IllegalStateException("QR 코드를 발급할 비품을 찾을 수 없습니다.");
+        }
+    }
+
+    @Override
     public List<String> getAllCategoryNames() {
         return equipmentMapper.selectAllCategoryNames();
     }

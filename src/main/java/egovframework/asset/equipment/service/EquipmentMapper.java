@@ -23,6 +23,7 @@ public interface EquipmentMapper {
     int insertEquipment(EquipmentVO equipmentVO);
     int updateEquipment(EquipmentVO equipmentVO);
     int deleteEquipment(Long equipmentId);
+    int updateQrImagePath(Map<String, Object> params);
 
     // 카테고리 마스터 (관리자 전용)
     List<String> selectAllCategoryNames();

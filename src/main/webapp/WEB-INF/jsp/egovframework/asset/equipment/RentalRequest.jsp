@@ -85,8 +85,10 @@
     </form>
   </div>
 </div>
+<input type="hidden" id="preselectCategory" value="<c:out value="${preselectCategory}"/>">
+<input type="hidden" id="preselectEquipmentName" value="<c:out value="${preselectEquipmentName}"/>">
 <script>
-function loadEquipmentList() {
+function loadEquipmentList(preselectName) {
   const category = document.getElementById('category').value;
   const sel = document.getElementById('itemSelect');
   sel.innerHTML = '<option value="">-- 선택 --</option>';
@@ -112,6 +114,14 @@ function loadEquipmentList() {
         opt.dataset.count = item.available_count;
         sel.appendChild(opt);
       });
+
+      if (preselectName) {
+        const matched = Array.from(sel.options).some(o => o.value === preselectName);
+        if (matched) {
+          sel.value = preselectName;
+          showItemInfo();
+        }
+      }
     })
     .catch(err => console.error('비품 목록 로드 실패:', err));
 }
@@ -166,6 +176,15 @@ function validateForm() {
   if (!returnDate) { alert('반납 예정일을 선택하세요.'); return false; }
   return true;
 }
+
+window.addEventListener('DOMContentLoaded', function() {
+  const preCategory = document.getElementById('preselectCategory').value;
+  const preName = document.getElementById('preselectEquipmentName').value;
+  if (preCategory) {
+    document.getElementById('category').value = preCategory;
+    loadEquipmentList(preName);
+  }
+});
 </script>
 </body>
 </html>

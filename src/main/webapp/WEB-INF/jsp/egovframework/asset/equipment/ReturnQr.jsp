@@ -29,19 +29,7 @@
     <h1 class="h5 fw-bold mb-0">반납 처리</h1>
   </div>
   <div class="page-card p-4">
-    <div class="dropzone p-5 mb-3" style="border-color:#b0c4ff;" onclick="alert('QR 스캔 기능 (ZXing 연동 예정)')">
-      <p class="mb-1">QR 코드를 스캔하세요</p>
-      <p class="small mb-0">클릭하여 카메라 실행</p>
-    </div>
-    <div class="section-divider">또는 직접 입력</div>
-    <div class="mb-3">
-      <label class="form-label fw-semibold small">시리얼 넘버 직접 입력</label>
-      <div class="input-group">
-        <input type="text" class="form-control" id="serialInput" placeholder="예: 78">
-        <button class="btn btn-brand" onclick="searchItem()">조회</button>
-      </div>
-    </div>
-    <div class="bg-light rounded-3 p-3 mb-3 d-none" id="itemConfirm">
+    <div class="bg-light rounded-3 p-3 mb-3" id="itemConfirm">
       <table class="table table-borderless table-sm mb-0">
         <tr><td class="text-secondary" style="width:100px;">비품명</td><td id="retName">-</td></tr>
         <tr><td class="text-secondary">모델번호</td><td id="retSerial">-</td></tr>
@@ -49,15 +37,29 @@
         <tr><td class="text-secondary">반납 예정일</td><td id="retDue">-</td></tr>
       </table>
     </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold small">시리얼 넘버 직접 입력</label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="serialInput" placeholder="예: 78">
+        <button class="btn btn-brand" onclick="searchItem()">조회</button>
+      </div>
+    </div>
     <button class="btn btn-success w-100 py-2 fw-bold" onclick="submitReturn()">반납 확인</button>
   </div>
 </div>
 <script>
 let currentRental = null;
 
+function resetItemConfirm() {
+  document.getElementById('retName').textContent = '-';
+  document.getElementById('retSerial').textContent = '-';
+  document.getElementById('retUser').textContent = '-';
+  document.getElementById('retDue').textContent = '-';
+  currentRental = null;
+}
+
 function searchItem() {
   const equipmentId = document.getElementById('serialInput').value.trim();
-  const box = document.getElementById('itemConfirm');
 
   if (!equipmentId) {
     alert('시리얼 넘버(장비 ID)를 입력하세요.');
@@ -69,8 +71,7 @@ function searchItem() {
     .then(data => {
       if (!data || !data.rentalId) {
         alert('해당 장비의 대여 내역이 없습니다.');
-        box.classList.add('d-none');
-        currentRental = null;
+        resetItemConfirm();
         return;
       }
       currentRental = data;
@@ -78,7 +79,6 @@ function searchItem() {
       document.getElementById('retSerial').textContent = data.equipmentId;
       document.getElementById('retUser').textContent = data.userName;
       document.getElementById('retDue').textContent = data.returnDate;
-      box.classList.remove('d-none');
     })
     .catch(err => {
       console.error('조회 실패:', err);
