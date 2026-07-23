@@ -33,10 +33,18 @@
         ORDER BY r.rental_id DESC
         LIMIT 1
     </select>
-    <delete id="deleteRental" parameterType="long">
-        DELETE FROM RENTAL
+    <update id="markRentalReturned" parameterType="long">
+        UPDATE RENTAL
+        SET request_status = 'RETURNED',
+            actual_return_date = NOW()
         WHERE rental_id = #{rentalId}
-    </delete>
+    </update>
+    <update id="markRentalClosed" parameterType="long">
+        UPDATE RENTAL
+        SET request_status = 'CLOSED',
+            actual_return_date = NOW()
+        WHERE rental_id = #{rentalId}
+    </update>
 
     <!-- 대여 요청 승인 관리 -->
     <select id="selectPendingRentals" resultType="map">

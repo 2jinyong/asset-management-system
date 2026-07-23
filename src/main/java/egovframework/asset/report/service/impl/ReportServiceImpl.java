@@ -51,7 +51,7 @@ public class ReportServiceImpl implements ReportService {
 
         Long rentalId = (Long) report.get("rentalId");
         if (rentalId != null) {
-            rentalMapper.deleteRental(rentalId);
+            rentalMapper.markRentalClosed(rentalId);
         }
     }
 
